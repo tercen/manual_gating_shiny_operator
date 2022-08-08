@@ -134,7 +134,7 @@ shinyUI(
                      
                      
                      
-                     let tol = 2;
+                     
                 
                       function getColorData(x, y, canvas) {
                           const red = y * (canvas.width * 4) + x * 4;
@@ -160,7 +160,7 @@ shinyUI(
                      ctx.drawImage(channel_image,0,0);
                      
 
-                     
+                     let tol = 5;
                      
                      // 7, 7, 15
                      // Ray casting to get the plotted axis limits

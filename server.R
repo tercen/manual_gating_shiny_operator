@@ -91,6 +91,7 @@ server <- shinyServer(function(input, output, session) {
   
   
   observeEvent( input$polygon, {
+    
     coords.x <- unlist(lapply( input$polygon$coords, function(x) x$x ))
     coords.y <- unlist(lapply( input$polygon$coords, function(x) x$y ))
     

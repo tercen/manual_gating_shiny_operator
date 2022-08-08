@@ -1,8 +1,8 @@
 {
-  "name": "Template Shiny Operator",
+  "name": "Manual Gating",
   "description": "Template to create a Shiny operator in Tercen.",
   "tags": ["template"],
-  "authors": ["tercen"],
-  "urls": ["https://github.com/tercen/template-shiny-operator"],
-  "isViewOnly": true
+  "authors": ["tercen", "thiago"],
+  "urls": ["https://github.com/tercen/manual_gating_shiny_operator"],
+  "isViewOnly": false
 }

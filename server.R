@@ -14,8 +14,8 @@ library(shinybusy)
 
 
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8
-# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-# options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
+options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
 
 
 server <- shinyServer(function(input, output, session) {

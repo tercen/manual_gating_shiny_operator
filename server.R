@@ -91,45 +91,49 @@ server <- shinyServer(function(input, output, session) {
   
   
   observeEvent( input$polygon, {
+    # FIXED for 900 x 900 image
+    # TODO Find a  quick and smart way to collect these values
+    axis.limits <- c(185, 765, 876, 100)
     
     coords.x <- unlist(lapply( input$polygon$coords, function(x) x$x ))
     coords.y <- unlist(lapply( input$polygon$coords, function(x) x$y ))
-    
+
     coords.type <- input$polygon$type # For later use
     
-    axis.limits <- c(input$polygon$left, 
-                    input$polygon$bottom,
-                    input$polygon$right,
-                    input$polygon$top) # For later use
+    # axis.limits <- c(input$polygon$left, 
+    #                 input$polygon$bottom,
+    #                 input$polygon$right,
+    #                 input$polygon$top) 
     
     point_cloud <- df$data
     
     # save('point_cloud', 'coords.x', 'coords.y', 'axis.limits', file="test.Rda")
     # Mapping from pixels to data space
-    range.x <- max( point_cloud[,1] ) - min( point_cloud[,1] )
-    range.y <- max( point_cloud[,2] ) - min( point_cloud[,2] )
+    # These values must match the image output!
+    range.x <- max( max(point_cloud[,1]*1.1 ) - 0 )
+    range.y <- max( max(point_cloud[,2]*1.1 ) - 0 )
     
     range.plot.x <- abs(axis.limits[3] - axis.limits[1])
     range.plot.y <- abs(axis.limits[2] - axis.limits[4])
     
     # 0.06 -> default margin
-    coords.x <- (coords.x- axis.limits[1])/range.plot.x + 0.06
-    coords.y <- (axis.limits[2]-coords.y)/range.plot.y - 0.06/2
+    coords.x <- (coords.x- axis.limits[1])/range.plot.x + 0.06/2
+    coords.y <- (1-0.06) - ((coords.y - axis.limits[4])/range.plot.y) + 0.06/2
     
-    poly_df <- data.frame("x"=coords.x, "y"=coords.y  )
+    poly_df <- data.frame("x"=coords.x * range.x, "y"=coords.y * range.y  )
     
     fac_norm <-max( point_cloud[,1] )
-    xr <- c(min(point_cloud[,1]),max(point_cloud[,1]) )
-    yr <- c(min(point_cloud[,2]),max(point_cloud[,2]) )
+    # xr <- c(min(point_cloud[,1]),max(point_cloud[,1]) )
+    # yr <- c(min(point_cloud[,2]),max(point_cloud[,2]) )
     
-    point_cloud[,1] <- point_cloud[,1]/max( point_cloud[,1] )
-    point_cloud[,2] <- point_cloud[,2]/max( point_cloud[,2] )
+    # point_cloud[,1] <- point_cloud[,1]/max( point_cloud[,1] )
+    # point_cloud[,2] <- point_cloud[,2]/max( point_cloud[,2] )
     
     names(point_cloud) <- c('x', 'y')
-    point_cloud$flag <- point_cloud %>%
+    point_cloud <- point_cloud %>%
         mutate(flag = point.in.polygon( .$x, .$y, poly_df$x, poly_df$y, mode.checked = FALSE ))
 
-    selected$pct <- 100*sum(point_cloud$flag == 1) / nrow(point_cloud)
+    selected$pct <- 100*sum(point_cloud$flag == 1) / length(point_cloud$flag)
     selected$x <- mean( (coords.x )    * range.x )
     selected$y <- mean( (coords.y )    * range.y )
     selected$flag <- point_cloud$flag

@@ -93,13 +93,13 @@ Shiny.addCustomMessageHandler('pct_selected', function(pct_msg){
   y = y / globalThis.plist.length;
   
   ctx.save();
-  ctx.font = '16px Arial'
+  ctx.font = '20px Arial'
   
   ctx.textBaseline = 'top';
   var text_width = ctx.measureText(pct_msg).width*1.1;
 
-  ctx.fillStyle = 'rgba(128, 128, 128, 0.6)';
-  ctx.fillRect(x-5, y-5, text_width, parseInt('20px Arial', 10));
+  ctx.fillStyle = 'rgba(190, 190, 190, 0.8)';
+  ctx.fillRect(x-5, y-5, text_width, parseInt('24px Arial', 10));
   
   ctx.fillStyle = '#000';
   
@@ -145,7 +145,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
   ctx.drawImage(channel_image,0,0);
   
   
-  let tol = 5;
+ /* let tol = 5;
   
   // 7, 7, 15
   // Ray casting to get the plotted axis limits
@@ -201,7 +201,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
       var bottom_axis = i;
       break;
     }
-  }
+  }*/
   
   
   // EVENTS
@@ -231,6 +231,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
     evt.preventDefault();
     var coords = processEvent(evt);
     
+
     if( isPolygonClosed == false ){
 
       if( globalThis.plist != '' && globalThis.plist.length > 1){
@@ -242,14 +243,16 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
           coords.y = first_pt.y;
           
           globalThis.plist.push(coords);
-          
-          let poly = {
-            'coords': globalThis.plist,
-            'type': 'list',
+          /*
+          ,
             'bottom': bottom_axis,
             'top': top_axis,
             'left': left_axis,
             'right': right_axis
+          */
+          let poly = {
+            'coords': globalThis.plist,
+            'type': 'list'
           };
           
           

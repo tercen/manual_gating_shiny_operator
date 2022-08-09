@@ -1,5 +1,6 @@
 globalThis.plist = new Array();
 
+var isPolygonClosed = false;
 
 function render(canvas, points) {
       let ctx = canvas.getContext('2d');
@@ -23,6 +24,7 @@ function render(canvas, points) {
 } // END OF render
 
 
+
 function componentToHex(c) {
   var hex = c.toString(16);
   return hex.length == 1 ? '0' + hex : hex;
@@ -32,20 +34,19 @@ function rgbToHex(r, g, b) {
   return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
-
-$(document).on('shiny:value', function(event) {
-  if (event.target.id === 'image_div') {
-    Shiny.setInputValue('pageLoaded', Math.random());
-  }
-  
-});
+// DEPRECATED: Remove later
+//$(document).on('shiny:value', function(event) {
+//  if (event.target.id === 'image_div') {
+//    Shiny.setInputValue('pageLoaded', Math.random());
+//  }
+//});
 
 $(document).on('shiny:sessioninitialized', function(event) {
   Shiny.setInputValue('pageLoaded', Math.random());
 });
 
 
-
+// Client-side handling of clearing the polygon points
 Shiny.addCustomMessageHandler('clear_poly', function(msg){
   globalThis.plist = new Array();
   var channel_image = document.getElementById('channel_image');
@@ -57,15 +58,17 @@ Shiny.addCustomMessageHandler('clear_poly', function(msg){
   var ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(channel_image,0,0);
+  isPolygonClosed = false;
 })
 
+
+// Show selected % after the polygon is closed
 Shiny.addCustomMessageHandler('pct_selected', function(pct_msg){
   var channel_image = document.getElementById('channel_image');
   var canvas = document.getElementById('gate_canvas');
   
   canvas.width = channel_image.naturalWidth;
   canvas.height = channel_image.naturalHeight;
-  
   
   
   var ctx = canvas.getContext('2d');
@@ -87,10 +90,8 @@ Shiny.addCustomMessageHandler('pct_selected', function(pct_msg){
   ctx.font = '16px Arial'
   
   ctx.textBaseline = 'top';
-  //ctx.textAlign = 'center';
   var text_width = ctx.measureText(pct_msg).width*1.1;
-  
-  
+
   ctx.fillStyle = 'rgba(128, 128, 128, 0.6)';
   ctx.fillRect(x-5, y-5, text_width, parseInt('20px Arial', 10));
   
@@ -98,6 +99,8 @@ Shiny.addCustomMessageHandler('pct_selected', function(pct_msg){
   
   ctx.fillText(pct_msg, x, y);
   ctx.restore();
+  
+  isPolygonClosed = true;
 })
 
 Shiny.addCustomMessageHandler('image_loaded', function(msg){
@@ -222,36 +225,37 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
     evt.preventDefault();
     var coords = processEvent(evt);
     
-    // callback('down', coords.x, coords.y, evt.shiftKey);
-    
-    if( globalThis.plist != '' && globalThis.plist.length > 1){
-      let first_pt = globalThis.plist[0];
-      let dist = Math.sqrt(Math.pow(coords.x - first_pt.x,2) + Math.pow(coords.y - first_pt.y,2) );
-      
-      if( dist < 10 ){
-        coords.x = first_pt.x;
-        coords.y = first_pt.y;
+    if( isPolygonClosed == false ){
+
+      if( globalThis.plist != '' && globalThis.plist.length > 1){
+        let first_pt = globalThis.plist[0];
+        let dist = Math.sqrt(Math.pow(coords.x - first_pt.x,2) + Math.pow(coords.y - first_pt.y,2) );
         
-        globalThis.plist.push(coords);
-        
-        let poly = {
-          'coords': globalThis.plist,
-          'type': 'list',
-          'bottom': bottom_axis,
-          'top': top_axis,
-          'left': left_axis,
-          'right': right_axis
-        };
-        
-        
-        Shiny.setInputValue('polygon', poly);
+        if( dist < 10 ){
+          coords.x = first_pt.x;
+          coords.y = first_pt.y;
+          
+          globalThis.plist.push(coords);
+          
+          let poly = {
+            'coords': globalThis.plist,
+            'type': 'list',
+            'bottom': bottom_axis,
+            'top': top_axis,
+            'left': left_axis,
+            'right': right_axis
+          };
+          
+          
+          Shiny.setInputValue('polygon', poly);
+        }else{
+          globalThis.plist.push(coords);
+        }
       }else{
         globalThis.plist.push(coords);
       }
-    }else{
-      globalThis.plist.push(coords);
+      render(canvas, globalThis.plist);
     }
-    render(canvas, globalThis.plist);
     
   }
   

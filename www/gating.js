@@ -7,9 +7,15 @@ function render(canvas, points) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(channel_image,0,0)
       ctx.save();
+      
+      ctx.lineWidth = 3;
       for (let i = 0; i < points.length; i++) {
         ctx.beginPath();
-        ctx.arc(points[i].x, points[i].y, 3, 0, Math.PI * 2, false);
+        ctx.fillStyle = rgbToHex(0, 255, 0);
+        ctx.arc(points[i].x, points[i].y, 3, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.fill();
+
         ctx.strokeStyle = rgbToHex(0, 255, 0);
         ctx.stroke();
 

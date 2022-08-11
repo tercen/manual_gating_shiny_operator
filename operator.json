@@ -1,7 +1,7 @@
 {
   "name": "Manual Gating",
   "description": "Template to create a Shiny operator in Tercen.",
-  "tags": ["template"],
+  "tags": ["Cytometry", "Gating"],
   "authors": ["tercen", "thiago"],
   "urls": ["https://github.com/tercen/manual_gating_shiny_operator"],
   "isViewOnly": false

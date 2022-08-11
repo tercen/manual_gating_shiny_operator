@@ -1,0 +1,211 @@
+
+
+
+
+create_custom_biexp_scale <- function(pos_decades, neg_decades, width_basis) {
+  custom_biexp_trans <- flowjo_biexp(pos = pos_decades,
+                                     neg = neg_decades, maxValue = 260000,
+                                     widthBasis = width_basis)
+  custom_biexp_inv_trans <- flowjo_biexp(pos = pos_decades, 
+                                         neg = neg_decades, 
+                                         widthBasis = width_basis,  maxValue = 260000,
+                                         inverse = TRUE)
+  
+  custom_biexp_scale <- scales::trans_new(name = 'custom biexponential',
+                                          transform = custom_biexp_trans,
+                                          inverse = custom_biexp_inv_trans)
+  
+  return(custom_biexp_scale)
+}
+
+create_custom_logicle_scale <- function(w, t, m, a) {
+  
+  custom_logicle_trans <- logicleTransform(w = w,
+                                           t = t,
+                                           m = m,
+                                           a = a)
+  
+  custom_logicle_inv_trans <- inverseLogicleTransform(trans = custom_logicle_trans)
+  
+  custom_logicle_scale <- scales::trans_new(name = 'custom logicle',
+                                            transform = custom_logicle_trans,
+                                            inverse = custom_logicle_inv_trans)
+  
+  return(custom_logicle_scale)
+}
+
+custom_logicle_breaks <- function(x) {
+  
+  rng.raw <- range(x, na.rm = TRUE)
+  
+  v_min_max = c(minimum = x[1], 
+                maximum = x[length(x)])
+  
+  log_min_max = c()
+  for (i in c("minimum", "maximum")) {
+    value = v_min_max[i]
+    if ( i == "minimum" && sign(value) == 1 ) {
+      log_min_max[i] = sign(value)*floor(log10(abs(value)))
+    } else {
+      log_min_max[i] = sign(value)*ceiling(log10(abs(value)))
+    }
+  }
+  power = log_min_max["minimum"]:log_min_max["maximum"]
+  sn = sign(power)
+  pow = abs(power)
+  
+  decades = sn*10^pow; # node that decades includes 0. e.g.: -100, -10, -1, 0, 1, 10.
+  n_decades = length(decades)
+  n_ticks = (n_decades-1)*9 + 1 + 2*sum(decades==0) #if we have 0 included in our decades, add 2 to the number of ticks because we will tick at -1 and 1
+  obj.Tick = rep(0, n_ticks)
+  tick_index = 1
+  previous_labeled_decade=NA
+  
+  for(k in 1:n_decades) {
+    if (k == n_decades) {
+      # write Tick for final decade
+      obj.Tick[tick_index] = decades[k]
+      # Fill any subsequent ticks
+      # which may be labelled '' so that the Tick vector is
+      # monotonically increasing;
+      if (tick_index < n_ticks) {
+        obj.Tick[(tick_index+1):length(obj.Tick)] = seq(obj.Tick[tick_index]+0.1, 
+                                                        obj.Tick[tick_index]+0.2, 
+                                                        length.out = n_ticks - tick_index)
+      }
+      break;
+    }
+    
+    # write Tick for this decade in 9 increments if the ends of
+    # the decades are powers of 10 increments if the right hand
+    # end of the gap is 0 (i.e.10^{-inf})
+    if (decades[k+1] == 0) {
+      n_increments = 11
+      lhs = decades[k]
+      rhs = decades[k+1] - min(abs(c(lhs,decades[k+1])))
+    } else if (decades[k]==0) {
+      n_increments = 9
+      lhs = 1
+      rhs = decades[k+1] - min(abs(c(lhs,decades[k+1])))
+    } else {
+      n_increments = 9
+      lhs = decades[k]
+      rhs = decades[k+1] - min(abs(c(lhs,decades[k+1])))
+    }
+    #obj.Tick[tick_index:(tick_index+n_increments-1)] = trans.fun(seq(from = lhs, to = rhs, length.out = n_increments))
+    obj.Tick[tick_index:(tick_index+n_increments-1)] = seq(from = lhs, to = rhs, length.out = n_increments)
+    
+    tick_index = tick_index + n_increments;
+  }
+  
+  return(obj.Tick)
+}
+
+break_transform <- function(breaks, transformation)
+{
+  if ((transformation == "biexponential") || (transformation == "logicle")) {
+    x.breaks <- custom_logicle_breaks(breaks)
+  } else {
+    x.breaks <- breaks
+  }
+  return(x.breaks)
+}
+
+custom_log10 = function(tick) {
+  if ( tick == 0) {
+    tick.lbl = "0"
+  } else { 
+    pow <- log10(abs(tick))
+    lbl <- paste0(sign(tick)*10, "^", pow)
+    tick.lbl = parse(text = lbl)
+  }
+  return(tick.lbl)
+}
+
+custom_tick_labels <- function(breaks) {
+  
+  labelled_ticks <- c(sapply(seq(14, 1, -1), function(x) -10^x), 0, sapply(seq(1, 14, 1), function(x) 10^x))
+  lbls <- sapply(breaks, custom_log10)
+  lbls[! breaks %in% labelled_ticks] = ""
+  
+  return(lbls)
+}
+
+theme_fcs <- function() {
+  theme(
+    legend.position = "right",
+    plot.title = element_text(hjust = 0.5),
+    panel.border = element_rect(
+      colour = "black",
+      fill = NA,
+      size = 1),
+    axis.text.x = element_text(margin = margin(t = .3, unit = "cm")),
+    axis.text.y = element_text(margin = margin(r = .3, unit = "cm"))
+  )
+} 
+
+
+
+is_ten <- function(x){
+  
+  while( x > 10 ){
+    x <- x %/% 10
+  }
+  
+  return((x %% 10)==0)
+}
+
+
+is_five <- function(x){
+  
+  while( x > 10 ){
+    x <- x %/% 10
+  }
+  
+  return((x %% 5)==0)
+}
+
+
+
+set_biexp_ticks <- function(plt, breaks){
+  bld     <- ggplot_build(plt)
+  tickPos <- bld$layout$panel_params[[1]]$x$break_positions()
+  
+  longBr  <- list()
+  medBr   <- list()
+  shortBr <- list()
+  
+  for (i in seq_along(breaks)) {
+    if(is_ten(breaks[i])  ){
+      longBr <- append(longBr, tickPos[i])
+    }else if(is_five(breaks[i]) ){
+      medBr <- append(medBr, tickPos[i])
+    }else{
+      shortBr <- append(shortBr, tickPos[i])
+    }
+  }
+  
+  for(i in seq_along(longBr)){
+    plt <- plt +
+      annotation_custom(linesGrob(x = unit(c(longBr[i], longBr[i]), 'native'),y = unit(c(0,-0.3), 'cm'),
+                                  gp=gpar(col='black', fill=NA, lwd=1.5) ) )
+  }
+  
+  for(i in seq_along(medBr)){
+    plt <- plt +
+      annotation_custom(linesGrob(x = unit(c(medBr[i], medBr[i]), 'native'),y = unit(c(0,-0.2), 'cm'),
+                                  gp=gpar(col='black',fill=NA, lwd=1) ) )
+  }
+  
+  for(i in seq_along(shortBr)){
+    plt <- plt +
+      annotation_custom(linesGrob(x = unit(c(shortBr[i], shortBr[i]), 'native'),y = unit(c(0,-0.1), 'cm'),
+                                  gp=gpar(col='black',fill=NA, lwd=1) ) )
+  }
+  
+  # Remove original ticks
+  plt <- plt + theme(axis.ticks.x=element_blank())
+  
+  plt <- plt +  coord_cartesian(clip = "off")
+  return(plt)
+}

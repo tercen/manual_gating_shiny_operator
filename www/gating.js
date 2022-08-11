@@ -1,6 +1,11 @@
 globalThis.plist = new Array();
 
+
+var currentButton = '';
+var currentMode  = 'none';
 var isPolygonClosed = false;
+var current_draw = 0;
+
 
 function render(canvas, points) {
       let ctx = canvas.getContext('2d');
@@ -40,20 +45,72 @@ function rgbToHex(r, g, b) {
   return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
+
+function changeClass(btn){
+  alert(btn);
+}
+
 // DEPRECATED: Remove later
-//$(document).on('shiny:value', function(event) {
-//  if (event.target.id === 'image_div') {
-//    Shiny.setInputValue('pageLoaded', Math.random());
-//  }
-//});
+$(document).on('shiny:value', function(event) {
+  if (event.target.id === 'image_div') {
+    if( parseInt(current_draw,10) === 0){
+      current_draw = current_draw + 1
+    }else{
+      Shiny.setInputValue('pageLoaded', Math.random());
+    }
+    
+    
+  }
+});
 
 $(document).on('shiny:sessioninitialized', function(event) {
   Shiny.setInputValue('pageLoaded', Math.random());
 });
 
+function save_gate(){
+ var canvas = document.getElementById('gate_canvas');
+ 
+  Shiny.setInputValue('save', [canvas.toDataURL(), Math.random()]); // Ask server to save 
+  hide_all_btn();
+  
+  document.getElementById('tool_label').innerHTML = "Manual Gating (View Mode)";
+}
+
+
+function select_transform( t_type){
+  //select_button(objId)
+  
+  globalThis.plist = new Array();
+  Shiny.setInputValue('transformSelected', t_type);
+}
+
+function select_button(objId){
+  let btn = document.getElementById(objId);
+  let div = btn.parentElement;
+  
+  div.style = "background-color: #FFFFFF;";
+  
+  if( currentButton != ''){
+    if( objId == 'polyDrawBtn'){
+      currentMode = 'none';
+    }
+    document.getElementById(currentButton).classList.remove('btn-active');
+  }
+  
+  btn.classList.add('btn-active');
+  
+  
+  
+  currentButton = objId;
+  
+  if( objId == 'polyDrawBtn'){
+    currentMode = 'polyDraw';
+  }
+  
+}
 
 // Client-side handling of clearing the polygon points
-Shiny.addCustomMessageHandler('clear_poly', function(msg){
+function clear_poly(){
   globalThis.plist = new Array();
   var channel_image = document.getElementById('channel_image');
   var canvas = document.getElementById('gate_canvas');
@@ -65,6 +122,20 @@ Shiny.addCustomMessageHandler('clear_poly', function(msg){
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(channel_image,0,0);
   isPolygonClosed = false;
+}
+
+function hide_all_btn(){
+    document.getElementById('saveBtn').style = 'visibility:hidden';
+  document.getElementById('eraseBtn').style = 'visibility:hidden';
+  document.getElementById('polyDrawBtn').style = 'visibility:hidden';
+  document.getElementById('linearBtn').style = 'visibility:hidden';
+  document.getElementById('biexpBtn').style = 'visibility:hidden';
+}
+
+Shiny.addCustomMessageHandler('setViewOnly', function(ignore){
+  hide_all_btn();
+  
+  document.getElementById('tool_label').innerHTML = "Manual Gating (View Mode)";
 })
 
 
@@ -232,7 +303,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
     var coords = processEvent(evt);
     
 
-    if( isPolygonClosed == false ){
+    if( isPolygonClosed == false && currentMode == 'polyDraw'){
 
       if( globalThis.plist != '' && globalThis.plist.length > 1){
         let first_pt = globalThis.plist[0];

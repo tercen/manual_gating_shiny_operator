@@ -152,7 +152,7 @@ server <- shinyServer(function(input, output, session) {
       
     }else{
       ctx <- getCtx(session)
-      fout <- paste0(tempdir(), '/', ctx$workflowId, '_', ctx$stepId, '.png')
+      fout <- paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
       
       if( file.exists(fout) ){
         imgfile <- fout
@@ -277,7 +277,7 @@ server <- shinyServer(function(input, output, session) {
     show_modal_spinner(spin="fading-circle", text = "Saving")
     # SAVE this as specific file to be read if needed... 
     # FIXME Likely will be collected by gc at some point...    
-    fout <- paste0(tempdir(), '/', ctx$workflowId, '_', ctx$stepId, '.png')
+    fout <- paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
     raw <- base64enc::base64decode(what = substr(input$save[1], 23, nchar(input$save[1])))
     png::writePNG(png::readPNG(raw), fout)    
 

@@ -9,7 +9,6 @@ library(ggplot2)
 library("scattermore")
 library(sp)
 
-library(ggcyto)
 library(flowCore)
 
 library(jsonlite)
@@ -19,8 +18,8 @@ library(base64enc)
 
 
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8
-options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
+# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+# options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
 
 
 source('plot_helpers.R')
@@ -34,8 +33,8 @@ server <- shinyServer(function(input, output, session) {
   
   output$image_div <- renderImage({
     query = parseQueryString(session$clientData$url_search)
-    # op_mode <- query[["mode"]]
-    op_mode <- 'view'
+    op_mode <- query[["mode"]]
+    # op_mode <- 'run'
     if( op_mode == "run"){
       df$data <- get_data(session)
       

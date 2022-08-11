@@ -35,8 +35,8 @@ server <- shinyServer(function(input, output, session) {
   
   output$image_div <- renderImage({
     query = parseQueryString(session$clientData$url_search)
-    op_mode <- query[["mode"]]
-    # op_mode <- 'run'
+    # op_mode <- query[["mode"]]
+    op_mode <- 'run'
     if( op_mode == "run"){
       df$data <- get_data(session)
       
@@ -87,6 +87,7 @@ server <- shinyServer(function(input, output, session) {
         ggsave(imgfile, units='in', width=3, height=3, p ) 
         
       }else{
+        # This is getting stuck...
         t_data <- df$data
         colnames(t_data)    <- c('.x','.y')
         
@@ -117,7 +118,7 @@ server <- shinyServer(function(input, output, session) {
                                      transformation = "biexponential")
         
         #paste0(tempfile(), '.jpeg') #
-        imgfile <-  '/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
+        imgfile <-  paste0(tempfile(), '.jpeg')
         
         p <- ggplot() +
           scale_x_continuous(limits = c( min(b_data$.x), max(b_data$.x) ),

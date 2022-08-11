@@ -30,6 +30,11 @@ server <- shinyServer(function(input, output, session) {
   image <- reactiveValues( loaded=NULL  )
   plot_mode <- reactiveValues( trans="linear" )
 
+  output$modeLbl <- renderText({
+    query = parseQueryString(session$clientData$url_search)
+    query[["mode"]]
+  })
+  
   
   output$image_div <- renderImage({
     query = parseQueryString(session$clientData$url_search)

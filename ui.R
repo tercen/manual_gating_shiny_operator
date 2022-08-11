@@ -93,6 +93,7 @@ shinyUI(
           
           
           ),
+          textOutput("modeLbl"),
           tags$canvas(id="gate_canvas", style="background-color: white"),
           fluidRow( column(8, imageOutput(outputId = "image_div")   ,  
                            style = "height:5px; visibility:hidden") )

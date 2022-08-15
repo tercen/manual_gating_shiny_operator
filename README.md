@@ -1,10 +1,10 @@
 # Manual Gating Shiny Operator
 
-### TODO List
+### Roadmap
 
 #### To 0.1.0
 * Add scales (biexponential, log)
-* Show saved gate when opening the operator again
+* ~~ Show saved gate when opening the operator again ~~
 * ~~ Selection Accuracy Improvement ~~
 
 #### To 0.2.0

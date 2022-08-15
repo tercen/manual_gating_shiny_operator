@@ -67,6 +67,10 @@ $(document).on('shiny:sessioninitialized', function(event) {
   Shiny.setInputValue('pageLoaded', Math.random());
 });
 
+$(document).on('shiny:connected', function(event) {
+  Shiny.setInputValue('connected', Math.random());
+});
+
 function save_gate(){
  var canvas = document.getElementById('gate_canvas');
  

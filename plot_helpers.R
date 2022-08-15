@@ -147,7 +147,7 @@ theme_fcs <- function() {
 
 
 is_ten <- function(x){
-  
+  x<-abs(x)
   while( x > 10 ){
     x <- x %/% 10
   }
@@ -157,7 +157,7 @@ is_ten <- function(x){
 
 
 is_five <- function(x){
-  
+  x<-abs(x)
   while( x > 10 ){
     x <- x %/% 10
   }
@@ -166,7 +166,7 @@ is_five <- function(x){
 }
 
 
-
+#TODO FOR Y
 set_biexp_ticks <- function(plt, breaks){
   bld     <- ggplot_build(plt)
   tickPos <- bld$layout$panel_params[[1]]$x$break_positions()
@@ -184,7 +184,7 @@ set_biexp_ticks <- function(plt, breaks){
       shortBr <- append(shortBr, tickPos[i])
     }
   }
-  
+  # browser()
   for(i in seq_along(longBr)){
     plt <- plt +
       annotation_custom(linesGrob(x = unit(c(longBr[i], longBr[i]), 'native'),y = unit(c(0,-0.3), 'cm'),

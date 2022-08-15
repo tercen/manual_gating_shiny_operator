@@ -5,20 +5,11 @@ library(shinycssloaders)
 
 library(shinybusy)
 
-# TODO
-# Check if new point is close enough to another point, if yes, close the polygon
-# When polygon is closed, send a message to the server to process who is in and out
-# Send back the percentage of cells in and out of gate
-
-
 shinyUI(
   
   fillPage(
-
     shinyjs::useShinyjs(),
-    
-    
-    
+
     tags$head(HTML("<script type='text/javascript' src='gating.js'></script>")),
     tags$style(HTML('
                 .toolbar-el{
@@ -60,44 +51,40 @@ shinyUI(
       
     
     
-    # sidebarLayout( 
-      #   sidebarPanel(
-      #     actionButton('clearBtn', 'Clear'),
-      #     actionButton('saveBtn', 'Save')
-      #   ),
-        
-    
-        mainPanel(
-          fluidRow(
-          column(4, 'Manual Gating', id="tool_label", class="toolbar-el", style="font-weight:bold; font-size:24px"),
-
-          column(1, HTML('<button type="button" id="polyDrawBtn" class="btn-tool" title="Polygon drawing mode">
+        fluidRow(
+          column(12, 'Manual Gating', id="tool_label", class="toolbar-el", style="font-weight:bold; font-size:36px",
+                 align='center')),
+        sidebarLayout(
+          sidebarPanel(  fluidRow(column(1, HTML('<button type="button" id="polyDrawBtn" class="btn-tool" title="Polygon drawing mode">
                               <img width="24" height="24" src="poly_draw.png" onClick=select_button("polyDrawBtn");></img>
-                            </button>'), class="toolbar-el"),
-
-          column(1, HTML('<button type="button" id="eraseBtn" class="btn-tool" title="Erase polygon">
+                            </button>'), class="toolbar-el", align='left')),
+                         
+                         fluidRow(column(1, HTML('<button type="button" id="eraseBtn" class="btn-tool" title="Erase polygon">
                               <img width="24" height="24" src="erase.png" onClick=clear_poly();></img>
-                            </button>'), class="toolbar-el"),
-          
-          column(1, HTML('<button type="button" id="saveBtn" class="btn-tool" title="Save gate">
+                            </button>'), class="toolbar-el", align='left')),
+                         
+                         fluidRow(column(1, HTML('<button type="button" id="saveBtn" class="btn-tool" title="Save gate">
                               <img width="24" height="24" src="save.png" onClick=save_gate();></img>
-                            </button>'), class="toolbar-el"),
-          
-          column(1, HTML('<button type="button" id="linearBtn" class="btn-tool" title="Linear Transform">
+                            </button>'), class="toolbar-el", align='left')),
+                         
+                         fluidRow(column(1, HTML('<button type="button" id="linearBtn" class="btn-tool" title="Linear Transform">
                               <img width="24" height="24" src="identity.png" onClick=select_transform("linear");></img>
-                            </button>'), class="toolbar-el"),
-          
-          column(1, HTML('<button type="button" id="biexpBtn" class="btn-tool" title="Biexp Transform">
+                            </button>'), class="toolbar-el", align='left')),
+                         
+                         fluidRow(column(1, HTML('<button type="button" id="biexpBtn" class="btn-tool" title="Biexp Transform">
                               <img width="24" height="24" src="biexp.png" onClick=select_transform("biexp");></img>
-                            </button>'), class="toolbar-el")
-          
-          
-          ),
-          textOutput("modeLbl"),
-          tags$canvas(id="gate_canvas", style="background-color: white"),
-          fluidRow( column(8, imageOutput(outputId = "image_div")   ,  
-                           style = "height:5px; visibility:hidden") )
-        ) # END mainPanel
+                            </button>'), class="toolbar-el", align='left')),
+                         width = 1, fluid=FALSE),
+          mainPanel(
+            
+            textOutput("modeLbl"),
+            tags$canvas(id="gate_canvas", style="background-color: white"),
+            fluidRow( column(8, imageOutput(outputId = "image_div")   ,  
+                             style = "height:5px; visibility:hidden") )
+          ) # END mainPanel
+        )
+    
+        
         
       # )
   ) # END filPage

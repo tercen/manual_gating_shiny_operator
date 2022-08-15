@@ -1,6 +1,7 @@
 library(shiny)
 library(tercen)
 library(tercenApi)
+library(tim)
 library(dplyr)
 library(tidyr)
 
@@ -36,8 +37,8 @@ server <- shinyServer(function(input, output, session) {
   output$image_div <- renderImage({
     query = parseQueryString(session$clientData$url_search)
     # op_mode <- query[["mode"]]
-    op_mode <- 'run'
-    if( op_mode == "run"){
+    # op_mode <- 'run'
+    # if( op_mode == "run"){
       df$data <- get_data(session)
       
       # Density
@@ -148,15 +149,15 @@ server <- shinyServer(function(input, output, session) {
       }
       
       
-    }else{
-      ctx <- getCtx(session)
-      fout <- paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
-      
-      if( file.exists(fout) ){
-        imgfile <- fout
-        session$sendCustomMessage("setViewOnly", runif(1))
-      }
-    }
+    # }else{
+    #   ctx <- getCtx(session)
+    #   fout <- paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
+    #   
+    #   if( file.exists(fout) ){
+    #     imgfile <- fout
+    #     session$sendCustomMessage("setViewOnly", runif(1))
+    #   }
+    # }
     
     
     image$loaded <- runif(1)
@@ -271,32 +272,37 @@ server <- shinyServer(function(input, output, session) {
   
   observeEvent( input$save, {
     ctx <- getCtx(session)
-    
+    # Check the barplot operator --> Do the result plot
     show_modal_spinner(spin="fading-circle", text = "Saving")
     # SAVE this as specific file to be read if needed... 
     # FIXME Likely will be collected by gc at some point...    
-    fout <- paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
+    fout <- paste0( tempfile(), ".png") #paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
     raw <- base64enc::base64decode(what = substr(input$save[1], 23, nchar(input$save[1])))
     png::writePNG(png::readPNG(raw), fout)    
 
+    img_df <- tim::png_to_df(tmp, filename = fout)
+    if(mimetype == 'image/png') {
+      df_out$mimetype <- 'image/png'
+      df_out$filename <- "Gate.png"
+    } 
 
     ctx <- getCtx(session)
     
     
-    coords.x <- unlist(lapply( input$polygon$coords, function(x) x$x ))
-    coords.y <- unlist(lapply( input$polygon$coords, function(x) x$y ))
+    # coords.x <- unlist(lapply( input$polygon$coords, function(x) x$x ))
+    # coords.y <- unlist(lapply( input$polygon$coords, function(x) x$y ))
     
     flagDf <- df$data %>%
-      cbind(.,data.frame("flag"=selected$flag)) %>%
+      cbind(.,data.frame("flag"=as.numeric(selected$flag))) %>%
       select(flag) %>%
       mutate(.ci=as.integer(0*seq(1,nrow(df$data)))) %>%
       ctx$addNamespace() 
     
-    polyDf <-data.frame('x'=coords.x, 'y'=coords.y, '.ci'=as.integer(0*seq(1,length(coords.x))) ) %>%
-      ctx$addNamespace()
+    # polyDf <-data.frame('x'=coords.x, 'y'=coords.y, '.ci'=as.integer(0*seq(1,length(coords.x))) ) %>%
+      # ctx$addNamespace()
     
 
-    ctx$save(list(flagDf,polyDf))
+    ctx$save(list(flagDf,img_df))
     
     remove_modal_spinner()
   })

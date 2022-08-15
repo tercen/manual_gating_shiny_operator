@@ -280,12 +280,17 @@ server <- shinyServer(function(input, output, session) {
     raw <- base64enc::base64decode(what = substr(input$save[1], 23, nchar(input$save[1])))
     png::writePNG(png::readPNG(raw), fout)    
 
-    img_df <- tim::png_to_df(tmp, filename = fout)
-    if(mimetype == 'image/png') {
-      df_out$mimetype <- 'image/png'
-      df_out$filename <- "Gate.png"
-    } 
+    img_df <- tim::png_to_df(fout, filename = "Gate.png")
 
+    img_df$mimetype <- 'image/png'
+    img_df$filename <- "Gate.png"
+
+
+    img_df <- img_df %>%
+      ctx$addNamespace() %>%
+      as_relation() %>%
+      as_join_operator(list(), list()) 
+    
     ctx <- getCtx(session)
     
     
@@ -296,13 +301,15 @@ server <- shinyServer(function(input, output, session) {
       cbind(.,data.frame("flag"=as.numeric(selected$flag))) %>%
       select(flag) %>%
       mutate(.ci=as.integer(0*seq(1,nrow(df$data)))) %>%
-      ctx$addNamespace() 
+      ctx$addNamespace() %>%
+      as_relation() %>%
+      as_join_operator(list(), list()) 
+      
     
     # polyDf <-data.frame('x'=coords.x, 'y'=coords.y, '.ci'=as.integer(0*seq(1,length(coords.x))) ) %>%
       # ctx$addNamespace()
     
-
-    ctx$save(list(flagDf,img_df))
+    save_relation(list(flagDf,img_df), ctx)
     
     remove_modal_spinner()
   })

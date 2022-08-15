@@ -52,7 +52,7 @@ shinyUI(
     
     
         fluidRow(
-          column(12, 'Manual Gating', id="tool_label", class="toolbar-el", style="font-weight:bold; font-size:36px",
+          column(6, 'Manual Gating', id="tool_label", class="toolbar-el", style="font-weight:bold; font-size:36px",
                  align='center')),
         sidebarLayout(
           sidebarPanel(  fluidRow(column(1, HTML('<button type="button" id="polyDrawBtn" class="btn-tool" title="Polygon drawing mode">

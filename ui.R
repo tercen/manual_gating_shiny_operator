@@ -47,25 +47,30 @@ shinyUI(
                 }
                 
                 
+                .span4 { max-width: 24px; }
+                .well { max-width: 24px; }
                 ' )),
       
     
     
-        fluidRow(
-          column(6, 'Manual Gating', id="tool_label", class="toolbar-el", style="font-weight:bold; font-size:36px",
-                 align='center')),
         sidebarLayout(
           sidebarPanel(  fluidRow(column(1, HTML('<button type="button" id="polyDrawBtn" class="btn-tool" title="Polygon drawing mode">
                               <img width="24" height="24" src="poly_draw.png" onClick=select_button("polyDrawBtn");></img>
                             </button>'), class="toolbar-el", align='left')),
                          
+                         fluidRow(column(1, HTML('</br>'))),
+                         
                          fluidRow(column(1, HTML('<button type="button" id="eraseBtn" class="btn-tool" title="Erase polygon">
                               <img width="24" height="24" src="erase.png" onClick=clear_poly();></img>
                             </button>'), class="toolbar-el", align='left')),
                          
+                         fluidRow(column(1, HTML('</br>'))),
+                         
                          fluidRow(column(1, HTML('<button type="button" id="saveBtn" class="btn-tool" title="Save gate">
                               <img width="24" height="24" src="save.png" onClick=save_gate();></img>
                             </button>'), class="toolbar-el", align='left')),
+                         
+                         fluidRow(column(1, HTML('</br>'))),
                          
                          fluidRow(column(1, HTML('<button type="button" id="linearBtn" class="btn-tool" title="Linear Transform">
                               <img width="24" height="24" src="identity.png" onClick=select_transform("linear");></img>
@@ -77,7 +82,9 @@ shinyUI(
                          width = 1, fluid=FALSE),
           mainPanel(
             
-            textOutput("modeLbl"),
+            fluidRow(
+              column(6, 'Manual Gating', id="tool_label", class="toolbar-el", style="font-weight:bold; font-size:36px",
+                     align='center')),
             tags$canvas(id="gate_canvas", style="background-color: white"),
             fluidRow( column(8, imageOutput(outputId = "image_div")   ,  
                              style = "height:5px; visibility:hidden") )

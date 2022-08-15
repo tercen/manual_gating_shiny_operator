@@ -20,8 +20,8 @@ library(base64enc)
 
 
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8
-# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-# options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
+options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
 
 
 source('plot_helpers.R')
@@ -37,18 +37,13 @@ server <- shinyServer(function(input, output, session) {
   output$image_div <- renderImage({
     query = parseQueryString(session$clientData$url_search)
     # op_mode <- query[["mode"]]
-    # op_mode <- 'run'
-    # if( op_mode == "run"){
+    op_mode <- 'run'
+    if( op_mode == "run"){
       df$data <- get_data(session)
-      
-      # Density
-      x <- densCols(unlist(df$data[,1]), unlist(df$data[,2]), colramp=colorRampPalette(c("black", "white")))
-      dens <- col2rgb(x)[1,] + 1L
-      
       ## Map densities to colors (VIRIDIS)
       cols <-  colorRampPalette(c("#440154", "#3b528b", "#21918c", 
                                   "#5ec962", "#fde725"))(256)
-      colors <- cols[dens]
+
       lab_names <- names(df$data)
       
       xlim <- c(0, max(df$data[,1]*1.1))
@@ -67,12 +62,21 @@ server <- shinyServer(function(input, output, session) {
       
       
       if( plot_mode$trans == 'linear'){
+        # Density
+        x <- densCols(unlist(df$data[,1]), unlist(df$data[,2]), colramp=colorRampPalette(c("black", "white")),
+                      nbin=256)
+        dens <- col2rgb(x)[1,] + 1L
+        
+
+
+        colors <- cols[dens]
+        
         imgfile <-  paste0(tempfile(), '.jpeg') # '/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
         p <- ggplot() +
           geom_scattermost(
             as.matrix(df$data),
             pointsize=2,
-            col=colors,
+            col=colors, 
             pixels=c(900,900)) +
           labs(x=lab_names[1], y=lab_names[2])  +
           scale_y_continuous(breaks = yticks, labels = ytick_labels) +
@@ -113,6 +117,16 @@ server <- shinyServer(function(input, output, session) {
         b_data[,2] <- (ytn * rd)+min(t_data$.y) 
         
         
+        # Density
+        x <- densCols(unlist(b_data[,1]), unlist(b_data[,2]), colramp=colorRampPalette(c("black", "white")),
+                      nbin=256 )
+        dens <- col2rgb(x)[1,] + 1L
+        
+        ## Map densities to colors (VIRIDIS)
+        
+        colors <- cols[dens]
+        
+        
         breaks.x <-  break_transform(breaks = breaks.x, 
                                      transformation = "biexponential")
         breaks.y <-  break_transform(breaks = breaks.y, 
@@ -149,15 +163,15 @@ server <- shinyServer(function(input, output, session) {
       }
       
       
-    # }else{
+    }else{
     #   ctx <- getCtx(session)
     #   fout <- paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
     #   
     #   if( file.exists(fout) ){
     #     imgfile <- fout
-    #     session$sendCustomMessage("setViewOnly", runif(1))
-    #   }
-    # }
+        session$sendCustomMessage("setViewOnly", runif(1))
+      # }
+    }
     
     
     image$loaded <- runif(1)

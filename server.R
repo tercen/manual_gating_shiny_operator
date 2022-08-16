@@ -21,8 +21,8 @@ library(base64enc)
 
 
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8
-# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-# options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
+options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
 
 
 source('plot_helpers.R')
@@ -173,12 +173,12 @@ server <- shinyServer(function(input, output, session) {
                              breaks = breaks.x,
                              trans = custom_biexp_scale,
                              labels = custom_tick_labels(breaks.x),
-                             sec.axis = dup_axis()) +
+                             sec.axis = dup_axis(labels=c())) +
           scale_y_continuous(limits = c( min(b_data$.y), max(b_data$.y) ),
                              breaks = breaks.y,
                              trans = custom_biexp_scale,
                              labels = custom_tick_labels(breaks.y),
-                             sec.axis = dup_axis()) +
+                             sec.axis = dup_axis(labels = c())) +
           geom_scattermore(
             data=t_data,
             mapping=aes(x=.x, y=.y),
@@ -189,12 +189,19 @@ server <- shinyServer(function(input, output, session) {
           theme(panel.background = element_rect(fill = 'white', colour = 'white'),
                 axis.line.x=element_line(color="#07070F" ),
                 axis.line.y=element_line(color="#07070F" ),
-                text = element_text(size=8)) #+ 
-          #annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = min(b_data$.x), xend = Inf, size = 1) +
+                text = element_text(size=8),
+                axis.ticks.x.top = element_blank(),
+                axis.title.x.top = element_blank(),
+                axis.ticks.y.right = element_blank(),
+                axis.title.y.right = element_blank()) 
+          
+          # annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = 0, xend = 0, size = 1) 
           # annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
         
         
         p<- set_biexp_ticks(p, breaks.x) 
+        # p
+        # browser()
         
         pb <- ggplot_build(p)
         
@@ -211,6 +218,8 @@ server <- shinyServer(function(input, output, session) {
         
         image$range_x <- xr
         image$range_y <- yr
+        
+        
 
         
         ggsave(imgfile, units='in', width=3, height=3, p ) 

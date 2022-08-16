@@ -16,12 +16,12 @@ function render(canvas, points) {
       ctx.lineWidth = 3;
       for (let i = 0; i < points.length; i++) {
         ctx.beginPath();
-        ctx.fillStyle = rgbToHex(0, 255, 0);
+        ctx.fillStyle = rgbToHex(0, 200, 0);
         ctx.arc(points[i].x, points[i].y, 3, 0, Math.PI * 2, true);
         ctx.closePath();
         ctx.fill();
 
-        ctx.strokeStyle = rgbToHex(0, 255, 0);
+        ctx.strokeStyle = rgbToHex(0, 200, 0);
         ctx.stroke();
 
         if( i >= 1){

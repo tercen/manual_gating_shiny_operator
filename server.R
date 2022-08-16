@@ -9,6 +9,7 @@ library(tidyr)
 library(ggplot2)
 library("scattermore")
 library(sp)
+library(grid)
 
 library(flowCore)
 library(flowWorkspace)
@@ -20,13 +21,14 @@ library(base64enc)
 
 
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8
-options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
+# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+# options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
 
 
 source('plot_helpers.R')
 
 server <- shinyServer(function(input, output, session) {
+  
   df        <- reactiveValues( data=NULL, flag=NULL  )
   selected <- reactiveValues( pct=NULL, x=NULL, y=NULL , flag=NULL   )
   image <- reactiveValues( loaded=NULL, 
@@ -60,18 +62,39 @@ server <- shinyServer(function(input, output, session) {
         colors <- cols[dens]
         
         
-        xlim <- c(min(df$data[,1]*1.1), max(df$data[,1]*1.1))
-        ylim <- c(min(df$data[,2]*1.1), max(df$data[,2]*1.1))
         
         
-        xticks <- seq( xlim[1], xlim[2], by=5e4 )
-        yticks <- seq( ylim[1], ylim[2], by=5e4 )
+        xlim <- c(min(df$data[,1]), max(df$data[,1]*1.1))
+        ylim <- c(min(df$data[,2]), max(df$data[,2]*1.1))
+        # browser()
+        # Adjust the plot ranges...
+        #TODO - Check flag output
+        # nearest_10k(xlim[1], label = FALSE)
+        # xticks <- seq( 0, xlim[2], by=1e3)
         
-        xtick_labels <- unlist(lapply(xticks, function(x) nearest_100k(x, label = TRUE)))
-        ytick_labels <- unlist(lapply(yticks, function(x) nearest_100k(x, label = TRUE)))
+        if( xlim[2] < 1.5e5){
+          xticks <- seq( xlim[1], xlim[2], by=1e4 )
+          fac<-3
+        }else{
+          xticks <- seq( xlim[1], xlim[2], by=5e4 )
+          fac<-4
+        }
         
-        xticks <- unlist(lapply(xticks, function(x) nearest_100k(x, label = FALSE)))
-        yticks <- unlist(lapply(yticks, function(x) nearest_100k(x, label = FALSE)))
+        
+        if( ylim[2] < 1.5e5){
+          yticks <- seq( ylim[1], ylim[2], by=1e4 )
+          fac<-3
+        }else{
+          yticks <- seq( ylim[1], ylim[2], by=5e4 )
+          fac<-4
+        }
+
+        
+        xtick_labels <- unlist(lapply(xticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
+        ytick_labels <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
+        
+        xticks <- unlist(lapply( xticks, function(x) nearest_factor10(x, FALSE, fac)))
+        yticks <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = FALSE, factor=fac)))
         
         imgfile <-  paste0(tempfile(), '.png') # '/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
         p <- ggplot() +
@@ -85,13 +108,19 @@ server <- shinyServer(function(input, output, session) {
           scale_x_continuous(breaks = xticks, labels = xtick_labels) +
           theme(panel.background = element_rect(fill = 'white', colour = 'white'),
                 axis.line.x=element_line(color="#07070F" ),
-                axis.line.y=element_line(color="#07070F" )) + 
+                axis.line.y=element_line(color="#07070F" ),
+                panel.grid = element_line(color = "#AAAAAA",
+                                          size = 0.1,
+                                          linetype = 2),
+                text = element_text(size=8)) + 
         annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = -Inf, xend = Inf, size = 1) +
         annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
         
         
         # browser()
-
+        pb <- ggplot_build(p)
+        image$range_x <- pb$layout$panel_params[[1]]$x.range
+        image$range_y <- pb$layout$panel_params[[1]]$y.range
         ggsave(imgfile, units='in', width=3, height=3, p ) 
         
       }else{
@@ -110,13 +139,13 @@ server <- shinyServer(function(input, output, session) {
         xt <- custom_biexp_scale$transform(x = t_data$.x  ) 
         xtn <- (xt - min(xt))/(max(xt)-min(xt))
         rd <- max(t_data$.x)-min(t_data$.x)
-        breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd/4.5 )
-        b_data$.x <- (xtn * rd) + min(t_data$.x) 
+        breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd/5 )
+        b_data[,1] <- (xtn * rd) + min(t_data$.x) 
         
         yt <- custom_biexp_scale$transform(x = t_data$.y  ) 
         ytn <- (yt - min(yt))/(max(yt)-min(yt))
         rd <- max(t_data$.y)-min(t_data$.y)
-        breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd/4.5 )
+        breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd/5 )
         b_data[,2] <- (ytn * rd)+min(t_data$.y) 
         
         
@@ -143,11 +172,13 @@ server <- shinyServer(function(input, output, session) {
           scale_x_continuous(limits = c( min(b_data$.x), max(b_data$.x) ),
                              breaks = breaks.x,
                              trans = custom_biexp_scale,
-                             labels = custom_tick_labels(breaks.x)) +
+                             labels = custom_tick_labels(breaks.x),
+                             sec.axis = dup_axis()) +
           scale_y_continuous(limits = c( min(b_data$.y), max(b_data$.y) ),
                              breaks = breaks.y,
                              trans = custom_biexp_scale,
-                             labels = custom_tick_labels(breaks.y)) +
+                             labels = custom_tick_labels(breaks.y),
+                             sec.axis = dup_axis()) +
           geom_scattermore(
             data=t_data,
             mapping=aes(x=.x, y=.y),
@@ -157,11 +188,29 @@ server <- shinyServer(function(input, output, session) {
           labs(x=lab_names[1], y=lab_names[2])  +
           theme(panel.background = element_rect(fill = 'white', colour = 'white'),
                 axis.line.x=element_line(color="#07070F" ),
-                axis.line.y=element_line(color="#07070F" )) + 
-          annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = -Inf, xend = Inf, size = 1) +
-          annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
-          
+                axis.line.y=element_line(color="#07070F" ),
+                text = element_text(size=8)) #+ 
+          #annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = min(b_data$.x), xend = Inf, size = 1) +
+          # annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
+        
+        
         p<- set_biexp_ticks(p, breaks.x) 
+        
+        pb <- ggplot_build(p)
+        
+        
+        xt <- custom_biexp_scale$transform(x = pb$layout$panel_params[[1]]$x.range  ) 
+        xtn <- (xt - min(xt))/(max(xt)-min(xt))
+        rd <- max(b_data$.x)-min(b_data$.x)
+        xr <- (xtn * rd) + min(b_data$.x) 
+        
+        xt <- custom_biexp_scale$transform(x = pb$layout$panel_params[[1]]$y.range  ) 
+        xtn <- (xt - min(xt))/(max(xt)-min(xt))
+        rd <- max(b_data$.y)-min(b_data$.y)
+        yr <- (xtn * rd) + min(b_data$.y) 
+        
+        image$range_x <- xr
+        image$range_y <- yr
 
         
         ggsave(imgfile, units='in', width=3, height=3, p ) 
@@ -170,13 +219,9 @@ server <- shinyServer(function(input, output, session) {
       
       
       
-      pb <- ggplot_build(p)
       
       
-      image$range_x <- pb$layout$panel_params[[1]]$x.range
-      image$range_y <- pb$layout$panel_params[[1]]$y.range
-      
-    }else{
+     }else{
     #   ctx <- getCtx(session)
     #   fout <- paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
     #   
@@ -245,7 +290,7 @@ server <- shinyServer(function(input, output, session) {
     }
     k <- k + 1
     y.plot.lim[2] <- marks.y[k]
-    
+    # browser()
     image$plot_lim_x <- x.plot.lim
     image$plot_lim_y <- y.plot.lim
     
@@ -283,7 +328,15 @@ server <- shinyServer(function(input, output, session) {
     #                 input$polygon$top) 
     
     point_cloud <- df$data
+    range.x <- max(image$range_x) - min(image$range_x) #max( max(point_cloud[,1]*1.1 ) + 0 )
+    range.y <- max(image$range_y) - min(image$range_y) #max( max(point_cloud[,2]*1.1 ) + 0 )
     
+    im_rx <- image$range_x
+    im_ry <- image$range_y
+    
+    save('axis.limits', 'coords.x', 'coords.y', 'point_cloud',
+         'range.x', 'range.y', 'im_rx', 'im_ry',
+         file='test.Rda')
     if( plot_mode$trans == 'biexp' ){
       t_data <- df$data
       colnames(t_data)    <- c('.x','.y')
@@ -299,14 +352,14 @@ server <- shinyServer(function(input, output, session) {
       xt <- custom_biexp_scale$transform(x = t_data$.x  ) 
       xtn <- (xt - min(xt))/(max(xt)-min(xt))
       rd <- max(t_data$.x)-min(t_data$.x)
-      breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd/4.5 )
+      breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd/5 )
       b_data$.x <- (xtn * rd) + min(t_data$.x) 
       
 
       yt <- custom_biexp_scale$transform(x = t_data$.y  ) 
       ytn <- (yt - min(yt))/(max(yt)-min(yt))
       rd <- max(t_data$.y)-min(t_data$.y)
-      breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd/4.5 )
+      breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd/5 )
       b_data[,2] <- (ytn * rd)+min(t_data$.y) 
       
       
@@ -314,23 +367,11 @@ server <- shinyServer(function(input, output, session) {
     }
     # browser()
     # image$range_x
-     # point_cloud <- df$data
-     # point_cloud[,1] <- point_cloud[,1] + 1000
-     # point_cloud[,2] <- point_cloud[,2] + 1000
-     # 
-     # coords.x <- unlist(lapply( input$polygon$coords, function(x) x$x ))
-     # coords.y <- unlist(lapply( input$polygon$coords, function(x) x$y ))
+
     # save('point_cloud', 'coords.x', 'coords.y', 'axis.limits', file="test.Rda")
     # Mapping from pixels to data space
     # These values must match the image output!
-    range.x <- max(image$range_x) - min(image$range_x) #max( max(point_cloud[,1]*1.1 ) + 0 )
-    range.y <- max(image$range_y) - min(image$range_y) #max( max(point_cloud[,2]*1.1 ) + 0 )
     
-    im_rx <- image$range_x
-    im_ry <- image$range_y
-    save('axis.limits', 'coords.x', 'coords.y', 'point_cloud',
-         'range.x', 'range.y', 'im_rx', 'im_ry',
-         file='test.Rda')
     
     range.plot.x <- abs(axis.limits[3] - axis.limits[1])
     range.plot.y <- abs(axis.limits[2] - axis.limits[4])
@@ -404,7 +445,7 @@ server <- shinyServer(function(input, output, session) {
     # Check the barplot operator --> Do the result plot
     show_modal_spinner(spin="fading-circle", text = "Saving")
     # SAVE this as specific file to be read if needed... 
-    # FIXME Likely will be collected by gc at some point...    
+
     fout <- paste0( tempfile(), ".png") #paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
     raw <- base64enc::base64decode(what = substr(input$save[1], 23, nchar(input$save[1])))
     png::writePNG(png::readPNG(raw), fout)    
@@ -422,22 +463,23 @@ server <- shinyServer(function(input, output, session) {
     
     ctx <- getCtx(session)
     
-    
-    # coords.x <- unlist(lapply( input$polygon$coords, function(x) x$x ))
-    # coords.y <- unlist(lapply( input$polygon$coords, function(x) x$y ))
-    browser()
+    xname <- tercen::remove.prefix( ctx$xAxis[[1]] )
+    yname <- tercen::remove.prefix( ctx$yAxis[[1]] )
+
     flagDf <- df$data %>%
-      cbind(.,data.frame("flag"=as.numeric(selected['flag']))) %>%
+      cbind(.,data.frame("flag"=as.numeric(selected$flag))) %>%
       select(flag) %>%
-      mutate(.ci=as.integer(0*seq(1,nrow(df$data)))) %>%
+      mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
+      mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
       ctx$addNamespace() %>%
       as_relation() %>%
-      as_join_operator(list(), list()) 
+      as_join_operator(list(), list())
       
     
     # polyDf <-data.frame('x'=coords.x, 'y'=coords.y, '.ci'=as.integer(0*seq(1,length(coords.x))) ) %>%
       # ctx$addNamespace()
-    
+    # browser()
+    # ctx$save(list(flagDf,img_df))
     save_relation(list(flagDf,img_df), ctx)
     
     remove_modal_spinner()
@@ -446,62 +488,13 @@ server <- shinyServer(function(input, output, session) {
   
 })
 
-# TODO: Check here how does it appear after saving
+
 get_data <- function( session ){
   ctx <- getCtx(session)
   progress <- Progress$new(session, min=1, max=1)
   progress$set(message="Loading Data")
   
   show_modal_spinner(spin="fading-circle", text = "Loading")
-  
-  #TODO Try to get the computed relation --> how to ask tercen for it?
-  # browser()
-  # steps <- ctx$workflow$steps
-  # current_step <- Find(function(p) identical(p$id, ctx$stepId), steps)
-  # task_state <- current_step$state$taskState
-  # current_step$state$taskId
-  #  
-  # crel <- current_step$computedRelation$mainRelation
-  # ctx$client$taskService
-  # 
-  # 
-  # # STate
-  # task <- ctx$client$taskService$get( current_step$state$taskId )
-  # crel <- computed_task$computedRelation
-  # 
-  # findSchemaByDataDirectory
-  # comp_schema <- ctx$client$tableSchemaService$findByQueryHash(task$query$qtHash)
-  # 
-  # task$taskHash
-  # 
-  # ctx$client$persistentService
-  # 
-  # 
-  # computed_relation$mainRelation$id  
-  # browser()
-  # cs <- ctx$client$tableSchemaService$get(crel$mainRelation$id )
-  # 
-  # # env_to_df <- function(env){
-  # #   tson <- env$toTson()
-  # #   n <- lapply( tson$columns, function(x){  x$name    } )
-  # #   dff<-data.frame((lapply( tson$columns, function(x){    x$values    } )))
-  # #   names(dff)<- n
-  # #   
-  # #   return(dff)
-  # # }
-  # 
-  # ctx$client$tableSchemaService$select( computed_task$computedRelation$mainRelation$id  )
-  # 
-  # ctx$client$tableSchemaService$get( computed_task$computedRelation$id)
-  # 
-  # ctx$client$tableSchemaService$get( computed_task$computedRelation$id )
-  # 
-  # computed_schema <- ctx$client$tableSchemaService$get(computed_task$schemaIds[[3]])
-  # ctx$client$tableSchemaService$selectSchema( computed_schema  )
-  # 
-  # 
-  # # ctx$
-  
   
   df <- ctx %>%
     select(.x, .y)
@@ -522,27 +515,37 @@ getMode <- function(session){
   return(query[["mode"]])
 }
 
-nearest_100k <- function( num, label=TRUE){
-  fac = 6
-
-
-  # while( (num %% (10^fac)) != num  ){
-  #   fac = fac + 1
-  # }
-  #
-  rnum <- num / ( 10^(fac-3) ) 
-
+nearest_factor10 <- function( num, label=TRUE, factor=4){
+  # -67.5  4932.5  9932.5 14932.5 19932.5 24932.5 29932.5 34932.5 39932.5 44932.5 49932.5 54932.5 59932.5 64932.5 69932.5 74932.5 79932.5 84932.5
+  # [19] 89932.5
+  
+  neg_fac <- 1
+  if(num<0){
+    neg_fac <- -1
+  }
+  num <- abs(num)
+  
+  if( num < 10^factor ){
+    if(label == FALSE){
+      return( neg_fac*(10^factor) )
+    }else{
+      num<-10^factor
+      round_num <- paste0(
+        format( neg_fac * ( num - num %% 10^factor )/1e3, scientific=FALSE),
+        'K')
+      return( round_num )
+    }
+  }
+  
   if(label == FALSE){
-    return( rnum * ( 10^(fac-3) )  ) 
+    return(neg_fac * ( num - num %% 10^factor ) )
   }
   round_num <- paste0(
-    format( rnum, scientific=FALSE),
+    format( neg_fac * ( num - num %% 10^factor )/1e3, scientific=FALSE),
     'K')
   
-
-
-  return( round_num )
   
+  return( round_num )
 }
 
 

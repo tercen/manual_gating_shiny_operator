@@ -21,8 +21,8 @@ library(base64enc)
 
 
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8
-options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
+# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+# options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
 
 
 source('plot_helpers.R')
@@ -481,6 +481,15 @@ server <- shinyServer(function(input, output, session) {
       ctx$addNamespace() %>%
       as_relation() %>%
       as_join_operator(list(), list())
+    
+    # flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
+    #   mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
+    #   mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
+    #   ctx$addNamespace() %>%
+    #   as_relation() %>%
+    #   left_join_relation(img_df, list(), list()) %>%
+    #   as_join_operator(ctx$cnames, ctx$cnames) %>%
+    #   save_relation(ctx)
       
     
     # polyDf <-data.frame('x'=coords.x, 'y'=coords.y, '.ci'=as.integer(0*seq(1,length(coords.x))) ) %>%

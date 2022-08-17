@@ -343,9 +343,9 @@ server <- shinyServer(function(input, output, session) {
     im_rx <- image$range_x
     im_ry <- image$range_y
     
-    save('axis.limits', 'coords.x', 'coords.y', 'point_cloud',
-         'range.x', 'range.y', 'im_rx', 'im_ry',
-         file='test.Rda')
+    # save('axis.limits', 'coords.x', 'coords.y', 'point_cloud',
+         # 'range.x', 'range.y', 'im_rx', 'im_ry',
+         # file='test.Rda')
     if( plot_mode$trans == 'biexp' ){
       t_data <- df$data
       colnames(t_data)    <- c('.x','.y')
@@ -475,9 +475,7 @@ server <- shinyServer(function(input, output, session) {
     xname <- tercen::remove.prefix( ctx$xAxis[[1]] )
     yname <- tercen::remove.prefix( ctx$yAxis[[1]] )
 
-    flagDf <- df$data %>%
-      cbind(.,data.frame("flag"=as.numeric(selected$flag))) %>%
-      select(flag) %>%
+    flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
       mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
       mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
       ctx$addNamespace() %>%

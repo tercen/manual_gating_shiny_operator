@@ -41,8 +41,8 @@ server <- shinyServer(function(input, output, session) {
   
   output$image_div <- renderImage({
     query = parseQueryString(session$clientData$url_search)
-    # op_mode <- query[["mode"]]
-    op_mode <- 'run'
+    op_mode <- query[["mode"]]
+    # op_mode <- 'run'
     if( op_mode == "run"){
       df$data <- get_data(session)
       ## Map densities to colors (VIRIDIS)

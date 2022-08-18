@@ -57,7 +57,7 @@ shinyUI(
           sidebarPanel(  fluidRow(column(1, HTML('<button type="button" id="polyDrawBtn" class="btn-tool" title="Polygon drawing mode">
                               <img width="24" height="24" src="poly_draw.png" onClick=select_button("polyDrawBtn");></img>
                             </button>'), class="toolbar-el", align='left')),
-                         
+
                          fluidRow(column(1, HTML('</br>'))),
                          
                          fluidRow(column(1, HTML('<button type="button" id="eraseBtn" class="btn-tool" title="Erase polygon">

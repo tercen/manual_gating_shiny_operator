@@ -46,9 +46,7 @@ function rgbToHex(r, g, b) {
 }
 
 
-function changeClass(btn){
-  alert(btn);
-}
+
 
 // DEPRECATED: Remove later
 $(document).on('shiny:value', function(event) {
@@ -82,36 +80,45 @@ function save_gate(){
 
 
 function select_transform( t_type){
-  //select_button(objId)
-  
   globalThis.plist = new Array();
+  let tmpBtn = currentButton;
+  select_button("");
+
   Shiny.setInputValue('transformSelected', t_type);
+
+  select_button(tmpBtn);
 }
 
 function select_button(objId){
-  let btn = document.getElementById(objId);
-  let div = btn.parentElement;
+  if( currentButton != ''  ){
+    currentMode = 'none';
+    let btn = document.getElementById(currentButton);
+    let div = btn.parentElement;
+    btn.classList.remove('btn-active');
+    div.classList.remove('btn-active');
+
+    currentButton = '';
+  }
   
-  div.style = "background-color: #FFFFFF;";
+  if( objId != ''){
+    let btn = document.getElementById(objId);
+    let div = btn.parentElement;
+    
+    div.style = "background-color: #FFFFFF;";
+    
   
-  if( currentButton != ''){
+    btn.classList.add('btn-active');
+    
+    currentButton = objId;
+    
     if( objId == 'polyDrawBtn'){
-      currentMode = 'none';
+      currentMode = 'polyDraw';
     }
-    document.getElementById(currentButton).classList.remove('btn-active');
   }
-  
-  btn.classList.add('btn-active');
-  
-  
-  
-  currentButton = objId;
-  
-  if( objId == 'polyDrawBtn'){
-    currentMode = 'polyDraw';
-  }
-  
+    
 }
+  
+ 
 
 // Client-side handling of clearing the polygon points
 function clear_poly(){

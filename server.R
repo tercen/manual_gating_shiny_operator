@@ -44,11 +44,14 @@ server <- shinyServer(function(input, output, session) {
     query = parseQueryString(session$clientData$url_search)
     op_mode <- query[["mode"]]
     # op_mode <- 'run'
-    if( op_mode == "run"){
+    
+    ## Map densities to colors (VIRIDIS)
+    cols <-  colorRampPalette(c("#440154", "#3b528b", "#21918c", 
+                                "#5ec962", "#fde725"))(256)
+    
+    if( is.null(op_mode) || op_mode == "run"){
       df$data <- get_data(session)
-      ## Map densities to colors (VIRIDIS)
-      cols <-  colorRampPalette(c("#440154", "#3b528b", "#21918c", 
-                                  "#5ec962", "#fde725"))(256)
+      
 
       lab_names <- names(df$data)
       
@@ -123,155 +126,49 @@ server <- shinyServer(function(input, output, session) {
 
       }
       
-      if( plot_mode$trans == 'biexp'){
+      if( plot_mode$trans %in% c('biexp','logicle')){
         t_data <- df$data
         colnames(t_data)    <- c('.x','.y')
         
-        custom_biexp_scale <- create_custom_biexp_scale(pos_decades = 5, 
-                                                        neg_decades = -1.5, 
-                                                        width_basis = -13)
+        if( plot_mode$trans == 'biexp'){
+          trans_name <- 'biexponential'  
+          custom_scale <- create_custom_biexp_scale(pos_decades = 5, 
+                                                          neg_decades = -1.5, 
+                                                          width_basis = -13)
+        }else{
+          trans_name <- 'logicle'  
+          custom_scale <- create_custom_logicle_scale()
+          
+        }
         
-        
-        
-        b_data <- t_data
-        
-        xt <- custom_biexp_scale$transform(x = t_data$.x  ) 
-        xtn <- (xt - min(xt))/(max(xt)-min(xt))
-        rd <- max(t_data$.x)-min(t_data$.x)
-        breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd/5 )
-        b_data[,1] <- (xtn * rd) + min(t_data$.x) 
-        
-        yt <- custom_biexp_scale$transform(x = t_data$.y  ) 
-        ytn <- (yt - min(yt))/(max(yt)-min(yt))
-        rd <- max(t_data$.y)-min(t_data$.y)
-        breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd/5 )
-        b_data[,2] <- (ytn * rd)+min(t_data$.y) 
-        
+        b_data <- transform_xy( t_data, custom_scale)
+        rd.x <- max(t_data$.x)-min(t_data$.x)
+        rd.y <- max(t_data$.y)-min(t_data$.y)
+        breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd.x/5 )
+        breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd.y/5 )
         
         # Density
         x <- densCols(unlist(b_data[,1]), unlist(b_data[,2]), colramp=colorRampPalette(c("black", "white")),
                       nbin=256 )
         dens <- col2rgb(x)[1,] + 1L
-        
-
         colors <- cols[dens]
         
-        # "-10, 0, 1e1, 1e2, 1e3, 1e4"),
-         # breaks.x <- c(0,  1e1, 1e2, 1e3, 1e4, 1e5)
-        # breaks.y <- c(-1e2,  1e1, 1e2, 1e3, 1e4)
         breaks.x <-  break_transform(breaks = breaks.x, 
-                                     transformation = "biexponential")
+                                     transformation = trans_name)
         breaks.y <-  break_transform(breaks = breaks.y, 
-                                     transformation = "biexponential")
+                                     transformation = trans_name)
         
-        #paste0(tempfile(), '.jpeg') #
         imgfile <-  paste0(tempfile(), '.png')
         
         p <- ggplot() +
           scale_x_continuous(limits = c( min(b_data$.x), max(b_data$.x) ),
                              breaks = breaks.x,
-                             trans = custom_biexp_scale,
+                             trans = custom_scale,
                              labels = custom_tick_labels(breaks.x),
                              sec.axis = dup_axis(labels=c())) +
           scale_y_continuous(limits = c( min(b_data$.y), max(b_data$.y) ),
                              breaks = breaks.y,
-                             trans = custom_biexp_scale,
-                             labels = custom_tick_labels(breaks.y),
-                             sec.axis = dup_axis(labels = c())) +
-          geom_scattermore(
-            data=t_data,
-            mapping=aes(x=.x, y=.y),
-            pointsize=2,
-            col=colors,
-            pixels=c(900,900)) +
-          labs(x=lab_names[1], y=lab_names[2])  +
-          theme(panel.background = element_rect(fill = 'white', colour = 'white'),
-                axis.line.x=element_line(color="#07070F" ),
-                axis.line.y=element_line(color="#07070F" ),
-                text = element_text(size=8),
-                axis.ticks.x.top = element_blank(),
-                axis.title.x.top = element_blank(),
-                axis.ticks.y.right = element_blank(),
-                axis.title.y.right = element_blank()) 
-          
-          # annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = 0, xend = 0, size = 1) 
-          # annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
-        
-        
-        p<- set_biexp_ticks(p, breaks.x) 
-        # p
-        # browser()
-        
-        pb <- ggplot_build(p)
-        
-        
-        xt <- custom_biexp_scale$transform(x = pb$layout$panel_params[[1]]$x.range  ) 
-        xtn <- (xt - min(xt))/(max(xt)-min(xt))
-        rd <- max(b_data$.x)-min(b_data$.x)
-        xr <- (xtn * rd) + min(b_data$.x) 
-        
-        xt <- custom_biexp_scale$transform(x = pb$layout$panel_params[[1]]$y.range  ) 
-        xtn <- (xt - min(xt))/(max(xt)-min(xt))
-        rd <- max(b_data$.y)-min(b_data$.y)
-        yr <- (xtn * rd) + min(b_data$.y) 
-        
-        image$range_x <- xr
-        image$range_y <- yr
-
-      }
-      
-      
-      if( plot_mode$trans == 'logicle'){
-        t_data <- df$data
-        colnames(t_data)    <- c('.x','.y')
-
-        custom_logicle_scale <- create_custom_logicle_scale()
-        
-        
-        
-        b_data <- t_data
-          
-        xt <- custom_logicle_scale$transform(x = t_data$.x  ) 
-        xtn <- (xt - min(xt))/(max(xt)-min(xt))
-        rd <- max(t_data$.x)-min(t_data$.x)
-        breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd/5 )
-        b_data[,1] <- (xtn * rd) + min(t_data$.x) 
-        
-        yt <- custom_logicle_scale$transform(x = t_data$.y  ) 
-        ytn <- (yt - min(yt))/(max(yt)-min(yt))
-        rd <- max(t_data$.y)-min(t_data$.y)
-        breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd/5 )
-        b_data[,2] <- (ytn * rd)+min(t_data$.y) 
-        
-        
-        # Density
-        x <- densCols(unlist(b_data[,1]), unlist(b_data[,2]), colramp=colorRampPalette(c("black", "white")),
-                      nbin=256 )
-        dens <- col2rgb(x)[1,] + 1L
-        
-        
-        colors <- cols[dens]
-        
-        # "-10, 0, 1e1, 1e2, 1e3, 1e4"),
-        # breaks.x <- c(0,  1e1, 1e2, 1e3, 1e4, 1e5)
-        # breaks.y <- c(-1e2,  1e1, 1e2, 1e3, 1e4)
-        breaks.x <-  break_transform(breaks = breaks.x, 
-                                     transformation = "logicle")
-        breaks.y <-  break_transform(breaks = breaks.y, 
-                                     transformation = "logicle")
-        
-
-        imgfile <-  paste0(tempfile(), '.png')
-        
-        p <- ggplot() +
-          scale_x_continuous(limits = c( min(b_data$.x), max(b_data$.x) ),
-                             breaks = breaks.x,
-                             trans = custom_logicle_scale,
-                             labels = custom_tick_labels(breaks.x),
-                             sec.axis = dup_axis(labels=c())) +
-          scale_y_continuous(limits = c( min(b_data$.y), max(b_data$.y) ),
-                             breaks = breaks.y,
-                             trans = custom_logicle_scale,
+                             trans = custom_scale,
                              labels = custom_tick_labels(breaks.y),
                              sec.axis = dup_axis(labels = c())) +
           geom_scattermore(
@@ -290,31 +187,20 @@ server <- shinyServer(function(input, output, session) {
                 axis.ticks.y.right = element_blank(),
                 axis.title.y.right = element_blank()) 
         
-        # annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = 0, xend = 0, size = 1) 
-        # annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
-        
-        
-        # p<- set_biexp_ticks(p, breaks.x) 
-        # p
-        # browser()
+        p<- set_biexp_ticks(p, breaks.x)
         
         pb <- ggplot_build(p)
         
+        ad <- data.frame(.x = pb$layout$panel_params[[1]]$x.range,
+                         .y = pb$layout$panel_params[[1]]$y.range)
+        br <- transform_xy( ad, custom_scale, df_range = b_data)
         
-        xt <- custom_logicle_scale$transform(x = pb$layout$panel_params[[1]]$x.range  ) 
-        xtn <- (xt - min(xt))/(max(xt)-min(xt))
-        rd <- max(b_data$.x)-min(b_data$.x)
-        xr <- (xtn * rd) + min(b_data$.x) 
+        image$range_x <- br$.x
+        image$range_y <- br$.y
         
-        xt <- custom_logicle_scale$transform(x = pb$layout$panel_params[[1]]$y.range  ) 
-        xtn <- (xt - min(xt))/(max(xt)-min(xt))
-        rd <- max(b_data$.y)-min(b_data$.y)
-        yr <- (xtn * rd) + min(b_data$.y) 
         
-        image$range_x <- xr
-        image$range_y <- yr
       }
-      
+ 
       
       ggsave(imgfile, units='in', width=3, height=3, p ) 
 
@@ -324,7 +210,7 @@ server <- shinyServer(function(input, output, session) {
     
     
     
-
+    
     img <- readPNG(imgfile)
     # 7, 7, 15
     
@@ -387,7 +273,7 @@ server <- shinyServer(function(input, output, session) {
     
     image$loaded <- runif(1)
     
- 
+    
     
     list(src = imgfile,
          id = "channel_image",
@@ -437,24 +323,8 @@ server <- shinyServer(function(input, output, session) {
                                                       width_basis = -13)
       
       
-      
-      b_data <- t_data
-      
-      xt <- custom_biexp_scale$transform(x = t_data$.x  ) 
-      xtn <- (xt - min(xt))/(max(xt)-min(xt))
-      rd <- max(t_data$.x)-min(t_data$.x)
-      breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd/5 )
-      b_data$.x <- (xtn * rd) + min(t_data$.x) 
-      
+      point_cloud <- transform_xy( t_data, custom_biexp_scale)
 
-      yt <- custom_biexp_scale$transform(x = t_data$.y  ) 
-      ytn <- (yt - min(yt))/(max(yt)-min(yt))
-      rd <- max(t_data$.y)-min(t_data$.y)
-      breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd/5 )
-      b_data[,2] <- (ytn * rd)+min(t_data$.y) 
-      
-      
-      point_cloud <- b_data
     }
     
     if( plot_mode$trans == 'logicle' ){
@@ -463,34 +333,9 @@ server <- shinyServer(function(input, output, session) {
       
       custom_logicle_scale <- create_custom_logicle_scale()
 
-      
-      b_data <- t_data
-      
-      xt <- custom_logicle_scale$transform(x = t_data$.x  ) 
-      xtn <- (xt - min(xt))/(max(xt)-min(xt))
-      rd <- max(t_data$.x)-min(t_data$.x)
-      breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd/5 )
-      b_data$.x <- (xtn * rd) + min(t_data$.x) 
-      
-      
-      yt <- custom_logicle_scale$transform(x = t_data$.y  ) 
-      ytn <- (yt - min(yt))/(max(yt)-min(yt))
-      rd <- max(t_data$.y)-min(t_data$.y)
-      breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd/5 )
-      b_data[,2] <- (ytn * rd)+min(t_data$.y) 
-      
-      
-      point_cloud <- b_data
-    }
-    
-    #
-    # browser()
-    # image$range_x
+      point_cloud <- transform_xy( t_data, custom_logicle_scale)
 
-    # save('point_cloud', 'coords.x', 'coords.y', 'axis.limits', file="test.Rda")
-    # Mapping from pixels to data space
-    # These values must match the image output!
-    
+    }
     
     range.plot.x <- abs(axis.limits[3] - axis.limits[1])
     range.plot.y <- abs(axis.limits[2] - axis.limits[4])
@@ -500,18 +345,12 @@ server <- shinyServer(function(input, output, session) {
     coords.x <- (coords.x- axis.limits[1])/range.plot.x + 0.06/2
     coords.y <- (1-0.06) - ((coords.y - axis.limits[4])/range.plot.y) + 0.06/2
     
-    
-    # OldRange = (OldMax - OldMin)  
-    # NewRange = (NewMax - NewMin)  
-    # NewValue = (((OldValue - OldMin) * NewRange) / OldRange) + NewMin
     NewValueX = (((coords.x - 0.06/2) * range.x) / 1) + min(image$range_x )
     NewValueY = (((coords.y - 0) * range.y) / 1) + min(image$range_y)
     poly_df <- data.frame("x"=(((coords.x - 0.06/2) * range.x) / 1) + min(image$range_x ),
                           "y"=(((coords.y - 0) * range.y) / 1) + min(image$range_y) )
-    # poly_df <- data.frame("x"=(coords.x * range.x), "y"=(coords.y ) * range.y )
 
-    # browser()
-    fac_norm <-max( point_cloud[,1] )
+    # fac_norm <-max( point_cloud[,1] )
     # xr <- c(min(point_cloud[,1]),max(point_cloud[,1]) )
     # yr <- c(min(point_cloud[,2]),max(point_cloud[,2]) )
     
@@ -676,6 +515,26 @@ nearest_factor10 <- function( num, label=TRUE, factor=4){
   
   
   return( round_num )
+}
+
+
+transform_xy <- function( t_data, custom_scale, df_range=NULL){
+  b_data <- t_data
+  if( is.null(df_range)){
+    df_range <- t_data
+  }
+  xt <- custom_scale$transform(x = t_data$.x  ) 
+  xtn <- (xt - min(xt))/(max(xt)-min(xt))
+  rd <- max(df_range$.x)-min(df_range$.x)
+  b_data[,1] <- (xtn * rd) + min(df_range$.x) 
+  
+  yt <- custom_scale$transform(x = t_data$.y  ) 
+  ytn <- (yt - min(yt))/(max(yt)-min(yt))
+  rd <- max(df_range$.y)-min(df_range$.y)
+  b_data[,2] <- (ytn * rd)+min(df_range$.y) 
+  
+  return(b_data)
+  
 }
 
 

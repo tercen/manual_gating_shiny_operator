@@ -79,6 +79,10 @@ shinyUI(
                          fluidRow(column(1, HTML('<button type="button" id="biexpBtn" class="btn-tool" title="Biexp Transform">
                               <img width="24" height="24" src="biexp.png" onClick=select_transform("biexp");></img>
                             </button>'), class="toolbar-el", align='left')),
+                         
+                         fluidRow(column(1, HTML('<button type="button" id="logBtn" class="btn-tool" title="Logicle Transform">
+                              <img width="24" height="24" src="log.png" onClick=select_transform("logicle");></img>
+                            </button>'), class="toolbar-el", align='left')),
                          width = 1, fluid=FALSE),
           mainPanel(
             

@@ -10,6 +10,7 @@ library(ggplot2)
 library("scattermore")
 library(sp)
 library(grid)
+library('png')
 
 library(flowCore)
 library(flowWorkspace)
@@ -20,9 +21,9 @@ library(shinybusy)
 library(base64enc)
 
 
-# http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8
+# http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/76b6be3a-3515-4d5f-a0f0-1a04342e525b
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-# options("tercen.stepId"= "f5203f95-59d1-4e4a-899f-d9fcfb8c4cf8")
+# options("tercen.stepId"= "76b6be3a-3515-4d5f-a0f0-1a04342e525b")
 
 
 source('plot_helpers.R')
@@ -60,9 +61,7 @@ server <- shinyServer(function(input, output, session) {
         dens <- col2rgb(x)[1,] + 1L
 
         colors <- cols[dens]
-        
-        
-        
+
         
         xlim <- c(min(df$data[,1]), max(df$data[,1]*1.1))
         ylim <- c(min(df$data[,2]), max(df$data[,2]*1.1))
@@ -121,10 +120,10 @@ server <- shinyServer(function(input, output, session) {
         pb <- ggplot_build(p)
         image$range_x <- pb$layout$panel_params[[1]]$x.range
         image$range_y <- pb$layout$panel_params[[1]]$y.range
-        ggsave(imgfile, units='in', width=3, height=3, p ) 
-        
-      }else{
-        # This is getting stuck...
+
+      }
+      
+      if( plot_mode$trans == 'biexp'){
         t_data <- df$data
         colnames(t_data)    <- c('.x','.y')
         
@@ -218,30 +217,113 @@ server <- shinyServer(function(input, output, session) {
         
         image$range_x <- xr
         image$range_y <- yr
-        
-        
 
-        
-        ggsave(imgfile, units='in', width=3, height=3, p ) 
       }
       
       
+      if( plot_mode$trans == 'logicle'){
+        t_data <- df$data
+        colnames(t_data)    <- c('.x','.y')
+
+        custom_logicle_scale <- create_custom_logicle_scale()
+        
+        
+        
+        b_data <- t_data
+          
+        xt <- custom_logicle_scale$transform(x = t_data$.x  ) 
+        xtn <- (xt - min(xt))/(max(xt)-min(xt))
+        rd <- max(t_data$.x)-min(t_data$.x)
+        breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd/5 )
+        b_data[,1] <- (xtn * rd) + min(t_data$.x) 
+        
+        yt <- custom_logicle_scale$transform(x = t_data$.y  ) 
+        ytn <- (yt - min(yt))/(max(yt)-min(yt))
+        rd <- max(t_data$.y)-min(t_data$.y)
+        breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd/5 )
+        b_data[,2] <- (ytn * rd)+min(t_data$.y) 
+        
+        
+        # Density
+        x <- densCols(unlist(b_data[,1]), unlist(b_data[,2]), colramp=colorRampPalette(c("black", "white")),
+                      nbin=256 )
+        dens <- col2rgb(x)[1,] + 1L
+        
+        
+        colors <- cols[dens]
+        
+        # "-10, 0, 1e1, 1e2, 1e3, 1e4"),
+        # breaks.x <- c(0,  1e1, 1e2, 1e3, 1e4, 1e5)
+        # breaks.y <- c(-1e2,  1e1, 1e2, 1e3, 1e4)
+        breaks.x <-  break_transform(breaks = breaks.x, 
+                                     transformation = "logicle")
+        breaks.y <-  break_transform(breaks = breaks.y, 
+                                     transformation = "logicle")
+        
+
+        imgfile <-  paste0(tempfile(), '.png')
+        
+        p <- ggplot() +
+          scale_x_continuous(limits = c( min(b_data$.x), max(b_data$.x) ),
+                             breaks = breaks.x,
+                             trans = custom_logicle_scale,
+                             labels = custom_tick_labels(breaks.x),
+                             sec.axis = dup_axis(labels=c())) +
+          scale_y_continuous(limits = c( min(b_data$.y), max(b_data$.y) ),
+                             breaks = breaks.y,
+                             trans = custom_logicle_scale,
+                             labels = custom_tick_labels(breaks.y),
+                             sec.axis = dup_axis(labels = c())) +
+          geom_scattermore(
+            data=t_data,
+            mapping=aes(x=.x, y=.y),
+            pointsize=2,
+            col=colors,
+            pixels=c(900,900)) +
+          labs(x=lab_names[1], y=lab_names[2])  +
+          theme(panel.background = element_rect(fill = 'white', colour = 'white'),
+                axis.line.x=element_line(color="#07070F" ),
+                axis.line.y=element_line(color="#07070F" ),
+                text = element_text(size=8),
+                axis.ticks.x.top = element_blank(),
+                axis.title.x.top = element_blank(),
+                axis.ticks.y.right = element_blank(),
+                axis.title.y.right = element_blank()) 
+        
+        # annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = 0, xend = 0, size = 1) 
+        # annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
+        
+        
+        # p<- set_biexp_ticks(p, breaks.x) 
+        # p
+        # browser()
+        
+        pb <- ggplot_build(p)
+        
+        
+        xt <- custom_logicle_scale$transform(x = pb$layout$panel_params[[1]]$x.range  ) 
+        xtn <- (xt - min(xt))/(max(xt)-min(xt))
+        rd <- max(b_data$.x)-min(b_data$.x)
+        xr <- (xtn * rd) + min(b_data$.x) 
+        
+        xt <- custom_logicle_scale$transform(x = pb$layout$panel_params[[1]]$y.range  ) 
+        xtn <- (xt - min(xt))/(max(xt)-min(xt))
+        rd <- max(b_data$.y)-min(b_data$.y)
+        yr <- (xtn * rd) + min(b_data$.y) 
+        
+        image$range_x <- xr
+        image$range_y <- yr
+      }
       
       
-      
-      
+      ggsave(imgfile, units='in', width=3, height=3, p ) 
+
      }else{
-    #   ctx <- getCtx(session)
-    #   fout <- paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
-    #   
-    #   if( file.exists(fout) ){
-    #     imgfile <- fout
-        session$sendCustomMessage("setViewOnly", runif(1))
-      # }
+      session$sendCustomMessage("setViewOnly", runif(1))
     }
     
     
-    library('png')
+    
 
     img <- readPNG(imgfile)
     # 7, 7, 15
@@ -374,6 +456,34 @@ server <- shinyServer(function(input, output, session) {
       
       point_cloud <- b_data
     }
+    
+    if( plot_mode$trans == 'logicle' ){
+      t_data <- df$data
+      colnames(t_data)    <- c('.x','.y')
+      
+      custom_logicle_scale <- create_custom_logicle_scale()
+
+      
+      b_data <- t_data
+      
+      xt <- custom_logicle_scale$transform(x = t_data$.x  ) 
+      xtn <- (xt - min(xt))/(max(xt)-min(xt))
+      rd <- max(t_data$.x)-min(t_data$.x)
+      breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd/5 )
+      b_data$.x <- (xtn * rd) + min(t_data$.x) 
+      
+      
+      yt <- custom_logicle_scale$transform(x = t_data$.y  ) 
+      ytn <- (yt - min(yt))/(max(yt)-min(yt))
+      rd <- max(t_data$.y)-min(t_data$.y)
+      breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd/5 )
+      b_data[,2] <- (ytn * rd)+min(t_data$.y) 
+      
+      
+      point_cloud <- b_data
+    }
+    
+    #
     # browser()
     # image$range_x
 
@@ -467,36 +577,40 @@ server <- shinyServer(function(input, output, session) {
 
     img_df <- img_df %>%
       ctx$addNamespace() %>%
-      as_relation() %>%
-      as_join_operator(list(), list()) 
+      as_relation() #%>%
+      #as_join_operator(list(), list()) 
     
     ctx <- getCtx(session)
     
     xname <- tercen::remove.prefix( ctx$xAxis[[1]] )
     yname <- tercen::remove.prefix( ctx$yAxis[[1]] )
 
-    flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
-      mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
-      mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
-      ctx$addNamespace() %>%
-      as_relation() %>%
-      as_join_operator(list(), list())
-    
     # flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
     #   mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
     #   mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
     #   ctx$addNamespace() %>%
     #   as_relation() %>%
-    #   left_join_relation(img_df, list(), list()) %>%
-    #   as_join_operator(ctx$cnames, ctx$cnames) %>%
-    #   save_relation(ctx)
+    #   as_join_operator(list(), list())
+    
+    flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
+      mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
+      mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
+      mutate(.i = seq_len(nrow(.)) - 1L) %>%
+      ctx$addNamespace() %>%
+      as_relation() %>%
+      # left_join_relation(ctx$crelation, ".i", ctx$crelation$rids) %>%
+      left_join_relation(img_df, list(), list()) %>%
+      as_join_operator(list(), list()) %>%
+      save_relation(ctx)
+    
+    
       
     
     # polyDf <-data.frame('x'=coords.x, 'y'=coords.y, '.ci'=as.integer(0*seq(1,length(coords.x))) ) %>%
       # ctx$addNamespace()
     # browser()
     # ctx$save(list(flagDf,img_df))
-    save_relation(list(flagDf,img_df), ctx)
+    # save_relation(list(flagDf,img_df), ctx)
     
     remove_modal_spinner()
   })

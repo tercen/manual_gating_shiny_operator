@@ -68,12 +68,7 @@ server <- shinyServer(function(input, output, session) {
         
         xlim <- c(min(df$data[,1]), max(df$data[,1]*1.1))
         ylim <- c(min(df$data[,2]), max(df$data[,2]*1.1))
-        # browser()
-        # Adjust the plot ranges...
-        #TODO - Check flag output
-        # nearest_10k(xlim[1], label = FALSE)
-        # xticks <- seq( 0, xlim[2], by=1e3)
-        
+
         if( xlim[2] < 1.5e5){
           xticks <- seq( xlim[1], xlim[2], by=1e4 )
           fac<-3
@@ -273,6 +268,7 @@ server <- shinyServer(function(input, output, session) {
     
     image$loaded <- runif(1)
     
+    session$sendCustomMessage("axis_bounds",append(x.plot.lim, y.plot.lim) )
     
     
     list(src = imgfile,
@@ -281,11 +277,12 @@ server <- shinyServer(function(input, output, session) {
          alt = "Scatter plot failed to load.")
   }, deleteFile = FALSE)
   
-  
+
+  # ===========================================================
+  # EVENT triggered when a polygon drawing is finished
+  # to calculate the % of data points inside of it
+  # ===========================================================
   observeEvent( input$polygon, {
-    # FIXED for 900 x 900 image
-    # TODO Find a  quick and smart way to collect these values
-    # axis.limits <- c(185, 765, 876, 100)
     axis.limits <- c(image$plot_lim_x[1], 
                      image$plot_lim_y[2],
                      image$plot_lim_x[2],
@@ -295,14 +292,16 @@ server <- shinyServer(function(input, output, session) {
     coords.x <- unlist(lapply( input$polygon$coords, function(x) x$x ))
     coords.y <- unlist(lapply( input$polygon$coords, function(x) x$y ))
 
+    # coords.x.px <- coords.x
+    # coords.y.px <- coords.y
     
+    coords.type <- input$polygon$type 
     
-    coords.type <- input$polygon$type # For later use
-    
-    # axis.limits <- c(input$polygon$left, 
-    #                 input$polygon$bottom,
-    #                 input$polygon$right,
-    #                 input$polygon$top) 
+    if( coords.type == 'quadrant'){
+      coords.x <- append( coords.x, image$plot_lim_x )
+      coords.y <- append( coords.y, image$plot_lim_y )
+    }
+
     
     point_cloud <- df$data
     range.x <- max(image$range_x) - min(image$range_x) #max( max(point_cloud[,1]*1.1 ) + 0 )
@@ -345,31 +344,170 @@ server <- shinyServer(function(input, output, session) {
     coords.x <- (coords.x- axis.limits[1])/range.plot.x + 0.06/2
     coords.y <- (1-0.06) - ((coords.y - axis.limits[4])/range.plot.y) + 0.06/2
     
-    NewValueX = (((coords.x - 0.06/2) * range.x) / 1) + min(image$range_x )
-    NewValueY = (((coords.y - 0) * range.y) / 1) + min(image$range_y)
+
     poly_df <- data.frame("x"=(((coords.x - 0.06/2) * range.x) / 1) + min(image$range_x ),
                           "y"=(((coords.y - 0) * range.y) / 1) + min(image$range_y) )
 
-    # fac_norm <-max( point_cloud[,1] )
-    # xr <- c(min(point_cloud[,1]),max(point_cloud[,1]) )
-    # yr <- c(min(point_cloud[,2]),max(point_cloud[,2]) )
-    
-    # point_cloud[,1] <- point_cloud[,1]/max( point_cloud[,1] )
-    # point_cloud[,2] <- point_cloud[,2]/max( point_cloud[,2] )
-
     names(point_cloud) <- c('x', 'y')
-    point_cloud <- point_cloud %>%
-        mutate(flag = point.in.polygon( .$x, .$y, poly_df$x, poly_df$y, mode.checked = FALSE ))
     
-    # browser()
+    
+    poly.px.x <- c()
+    poly.px.y <- c()
+    
+    if( coords.type == 'poly'){
+      point_cloud <- point_cloud %>%
+          mutate(flag = point.in.polygon( .$x, .$y, poly_df$x, poly_df$y, mode.checked = FALSE ))  
+      
+      poly.px.x <-append( poly.px.x, coords.x*range.plot.x)
+      poly.px.y <-append( poly.px.y, coords.y*range.plot.y)
+    }
+    
+    if( coords.type == 'quadrant'){
 
-    selected$pct <- 100*sum(point_cloud$flag == 1) / length(point_cloud$flag)
-    selected$x <- mean( (coords.x )    * range.x )
-    selected$y <- mean( (coords.y )    * range.y )
+      poly.quadrant <- data.frame( x=c(poly_df$x[6], poly_df$x[1], poly_df$x[1], poly_df$x[6], poly_df$x[6]),
+                                   y=c(poly_df$y[6], poly_df$y[6], poly_df$y[4], poly_df$y[4], poly_df$y[6])
+                                   )
+      poly.px.x <-append( poly.px.x,
+                       c(coords.x[6]*range.plot.x,
+                       coords.x[1]*range.plot.x, 
+                       coords.x[1]*range.plot.x, 
+                       coords.x[6]*range.plot.x, 
+                       coords.x[6]*range.plot.x))
+      
+      poly.px.y <-append( poly.px.y,
+                          c(coords.y[6]*range.plot.y,
+                            coords.y[6]*range.plot.y, 
+                            coords.y[4]*range.plot.y, 
+                            coords.y[4]*range.plot.y, 
+                            coords.y[6]*range.plot.y))
+      
+      flag.top.left <- point.in.polygon( point_cloud$x, point_cloud$y,
+                        poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+      
+      
+      
+      
+      poly.quadrant <- data.frame( x=c(poly_df$x[1]+1, poly_df$x[5], poly_df$x[5], poly_df$x[1]+1, poly_df$x[1]+1),
+                                   y=c(poly_df$y[6], poly_df$y[6], poly_df$y[4], poly_df$y[4], poly_df$y[6])
+      )
+      
+      poly.px.x <-append( poly.px.x,
+                          c((coords.x[1]+1)*range.plot.x,
+                            coords.x[5]*range.plot.x, 
+                            coords.x[5]*range.plot.x, 
+                            (coords.x[1]+1)*range.plot.x, 
+                            (coords.x[1]+1)*range.plot.x))
+      
+      poly.px.y <-append( poly.px.y,
+                          c(coords.y[6]*range.plot.y,
+                            coords.y[6]*range.plot.y, 
+                            coords.y[4]*range.plot.y, 
+                            coords.y[4]*range.plot.y, 
+                            coords.y[6]*range.plot.y))
+      
+      flag.top.right <- point.in.polygon( point_cloud$x, point_cloud$y,
+                                         poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+      
+      
+      
+      poly.quadrant <- data.frame( x=c(poly_df$x[6], poly_df$x[1], poly_df$x[1], poly_df$x[6], poly_df$x[6]),
+                                   y=c(poly_df$y[4]-1, poly_df$y[4]-1, poly_df$y[3], poly_df$y[3], poly_df$y[4]-1)
+      )
+      
+      
+      poly.px.x <-append( poly.px.x,
+                          c(coords.x[6]*range.plot.x,
+                            coords.x[1]*range.plot.x, 
+                            coords.x[1]*range.plot.x, 
+                            coords.x[6]*range.plot.x, 
+                            coords.x[6]*range.plot.x))
+      
+      poly.px.y <-append( poly.px.y,
+                          c((coords.y[4]-1)*range.plot.y,
+                            (coords.y[4]-1)*range.plot.y, 
+                            coords.y[3]*range.plot.y, 
+                            coords.y[3]*range.plot.y, 
+                            (coords.y[4]-1)*range.plot.y))
+      
+      flag.bottom.left <- point.in.polygon( point_cloud$x, point_cloud$y,
+                                         poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+      
+      
+      poly.quadrant <- data.frame( x=c(poly_df$x[1], poly_df$x[5], poly_df$x[5], poly_df$x[1], poly_df$x[1]),
+                                   y=c(poly_df$y[4]-1, poly_df$y[4]-1, poly_df$y[3], poly_df$y[3], poly_df$y[4]-1)
+      )
+      
+      
+      poly.px.x <-append( poly.px.x,
+                          c((coords.x[1]+1)*range.plot.x,
+                            coords.x[5]*range.plot.x, 
+                            coords.x[5]*range.plot.x, 
+                            (coords.x[1]+1)*range.plot.x, 
+                            (coords.x[1]+1)*range.plot.x))
+      
+      poly.px.y <-append( poly.px.y,
+                          c((coords.y[4]-1)*range.plot.y,
+                            (coords.y[4]-1)*range.plot.y, 
+                            coords.y[3]*range.plot.y, 
+                            coords.y[3]*range.plot.y, 
+                            (coords.y[4]-1)*range.plot.y))
+      
+      flag.bottom.right <- point.in.polygon( point_cloud$x, point_cloud$y,
+                                          poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+      
+      
+      flag.top.left[flag.top.left >= 1] <- 1
+      flag.top.right[flag.top.right >= 1] <- 2
+      flag.bottom.left[flag.bottom.left >= 1] <- 3
+      flag.bottom.right[flag.bottom.right >= 1] <- 4
+      
+      flag <- flag.top.left + 
+        flag.top.right + 
+        flag.bottom.left + 
+        flag.bottom.right
+      
+      point_cloud <- point_cloud %>%
+        mutate(flag = flag)  
+    }
+
+    pcts <- c()
+    xs <- c()
+    ys <- c()
+    
+    flag_vals <- unique(point_cloud$flag)
+    
+    for( fl in flag_vals){
+      if(fl > 0){
+        pct <-  100*sum(point_cloud$flag == fl) / length(point_cloud$flag)
+        pct <-  c(paste0( format(pct, digits = 3, scientific = FALSE), '%') )
+        
+        pcts <- append( pcts, pct)
+
+        xs <- append( xs, image$plot_lim_x[1] + mean( (poly.px.x[fl] )) )
+        ys <- append( ys, image$plot_lim_y[2] - mean( (poly.px.y[fl] )) + image$plot_lim_y[1] )
+      }
+    }
+    
+    # image$plot_lim_x[1]
+    # browser()
+    # selected$pct <- 100*sum(point_cloud$flag == 1) / length(point_cloud$flag)
+    # selected$x <- mean( (coords.x )    * range.x )
+    # selected$y <- mean( (coords.y )    * range.y )
+    # selected$pct <- pcts
+    # selected$x <- xs
+    # selected$y <- ys
     selected$flag <- point_cloud$flag
 
     # df$flag <- point_cloud$flag
-    session$sendCustomMessage("pct_selected",  paste0( format(selected$pct, digits = 3, scientific = FALSE), '%') )
+    # session$sendCustomMessage("pct_selected",  paste0( format(selected$pct, digits = 3, scientific = FALSE), '%') )
+    coords.x.px <- coords.x
+    coords.y.px <- coords.y
+    session$sendCustomMessage("flag_info",
+                               list(
+                                 "pct"=as.list(pcts),
+                                 "x"=as.list(xs),
+                                 "y"=as.list(ys)
+                               ))
   })
   
   observeEvent( input$pageLoaded, {

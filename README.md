@@ -10,8 +10,17 @@
 #### To 0.2.0
 * 1d Gating
 * UI improvements (tick length in biexponential plot)
-* Quadrant gating
-* Add log scaling 
+* ~~ Quadrant gating ~~
+* ~~ Add log scaling ~~
+* Change input mapping to gather
+
+
+#### Unscheduled
+* Create an update mode (read polygon info and update it)
+* Semi-automatic gating
+* Spider gating
+* Ellipsoid gating
+* Density-based gating
 
 
 

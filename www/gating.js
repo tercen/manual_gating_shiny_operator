@@ -186,6 +186,7 @@ function hide_all_btn(){
   document.getElementById('quadDrawBtn').style = 'visibility:hidden';
   document.getElementById('linearBtn').style = 'visibility:hidden';
   document.getElementById('biexpBtn').style = 'visibility:hidden';
+  document.getElementById('logBtn').style = 'visibility:hidden';
 }
 
 Shiny.addCustomMessageHandler('setViewOnly', function(ignore){

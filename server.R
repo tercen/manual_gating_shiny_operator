@@ -21,9 +21,16 @@ library(shinybusy)
 library(base64enc)
 
 
-# http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/76b6be3a-3515-4d5f-a0f0-1a04342e525b
+# CD4/CD8
+# http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/95dd2038-15bb-4edf-ac91-1298a1189632
+options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+options("tercen.stepId"= "95dd2038-15bb-4edf-ac91-1298a1189632")
+
+
+# 1D
+# http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/c1c6c35e-3e6f-436c-bcfa-9cb5689604df
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-# options("tercen.stepId"= "76b6be3a-3515-4d5f-a0f0-1a04342e525b")
+# options("tercen.stepId"= "c1c6c35e-3e6f-436c-bcfa-9cb5689604df")
 
 
 source('plot_helpers.R')
@@ -37,7 +44,7 @@ server <- shinyServer(function(input, output, session) {
                            plot_lim_x=NULL,
                            range_y=NULL,
                            plot_lim_y=NULL)
-  plot_mode <- reactiveValues( trans="linear" )
+  plot_mode <- reactiveValues( trans="linear", type="2d" )
   
   
   output$image_div <- renderImage({
@@ -46,229 +53,35 @@ server <- shinyServer(function(input, output, session) {
     # op_mode <- 'run'
     
     ## Map densities to colors (VIRIDIS)
-    cols <-  colorRampPalette(c("#440154", "#3b528b", "#21918c", 
-                                "#5ec962", "#fde725"))(256)
+    
     
     if( is.null(op_mode) || op_mode == "run"){
-      df$data <- get_data(session)
+      tmp <-get_data(session)
+      
+      df$data <- tmp[[1]]
+      plot_mode$type <- tmp[[2]]
       
 
-      lab_names <- names(df$data)
+      # lab_names <- names(df$data)
       
-  
-      
-      if( plot_mode$trans == 'linear'){
-        # Density
-        x <- densCols(unlist(df$data[,1]), unlist(df$data[,2]), colramp=colorRampPalette(c("black", "white")),
-                      nbin=256)
-        dens <- col2rgb(x)[1,] + 1L
-
-        colors <- cols[dens]
-
-        
-        xlim <- c(min(df$data[,1]), max(df$data[,1]*1.1))
-        ylim <- c(min(df$data[,2]), max(df$data[,2]*1.1))
-
-        if( xlim[2] < 1.5e5){
-          xticks <- seq( xlim[1], xlim[2], by=1e4 )
-          fac<-3
-        }else{
-          xticks <- seq( xlim[1], xlim[2], by=5e4 )
-          fac<-4
-        }
-        
-        
-        if( ylim[2] < 1.5e5){
-          yticks <- seq( ylim[1], ylim[2], by=1e4 )
-          fac<-3
-        }else{
-          yticks <- seq( ylim[1], ylim[2], by=5e4 )
-          fac<-4
-        }
-
-        
-        xtick_labels <- unlist(lapply(xticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
-        ytick_labels <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
-        
-        xticks <- unlist(lapply( xticks, function(x) nearest_factor10(x, FALSE, fac)))
-        yticks <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = FALSE, factor=fac)))
-        
-        imgfile <-  paste0(tempfile(), '.png') # '/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
-        p <- ggplot() +
-          geom_scattermost(
-            as.matrix(df$data),
-            pointsize=2,
-            col=colors, 
-            pixels=c(900,900)) +
-          labs(x=lab_names[1], y=lab_names[2])  +
-          scale_y_continuous(breaks = yticks, labels = ytick_labels) +
-          scale_x_continuous(breaks = xticks, labels = xtick_labels) +
-          theme(panel.background = element_rect(fill = 'white', colour = 'white'),
-                axis.line.x=element_line(color="#07070F" ),
-                axis.line.y=element_line(color="#07070F" ),
-                panel.grid = element_line(color = "#AAAAAA",
-                                          size = 0.1,
-                                          linetype = 2),
-                text = element_text(size=8)) + 
-        annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = -Inf, xend = Inf, size = 1) +
-        annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
-        
-        
-        # browser()
-        pb <- ggplot_build(p)
-        image$range_x <- pb$layout$panel_params[[1]]$x.range
-        image$range_y <- pb$layout$panel_params[[1]]$y.range
-
+      if( plot_mode$type  == '2d' ){
+        res <- create_plot_2d(df$data, plot_mode$trans)
+        imgfile <- res[[1]]
+        image$range_x <- res[[2]]
+        image$range_y <- res[[3]]
+        image$plot_lim_x <- res[[4]]
+        image$plot_lim_y <- res[[5]]
       }
       
-      if( plot_mode$trans %in% c('biexp','logicle')){
-        t_data <- df$data
-        colnames(t_data)    <- c('.x','.y')
-        
-        if( plot_mode$trans == 'biexp'){
-          trans_name <- 'biexponential'  
-          custom_scale <- create_custom_biexp_scale(pos_decades = 5, 
-                                                          neg_decades = -1.5, 
-                                                          width_basis = -13)
-        }else{
-          trans_name <- 'logicle'  
-          custom_scale <- create_custom_logicle_scale()
-          
-        }
-        
-        b_data <- transform_xy( t_data, custom_scale)
-        rd.x <- max(t_data$.x)-min(t_data$.x)
-        rd.y <- max(t_data$.y)-min(t_data$.y)
-        breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd.x/5 )
-        breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd.y/5 )
-        
-        # Density
-        x <- densCols(unlist(b_data[,1]), unlist(b_data[,2]), colramp=colorRampPalette(c("black", "white")),
-                      nbin=256 )
-        dens <- col2rgb(x)[1,] + 1L
-        colors <- cols[dens]
-        
-        breaks.x <-  break_transform(breaks = breaks.x, 
-                                     transformation = trans_name)
-        breaks.y <-  break_transform(breaks = breaks.y, 
-                                     transformation = trans_name)
-        
-        imgfile <-  paste0(tempfile(), '.png')
-        
-        p <- ggplot() +
-          scale_x_continuous(limits = c( min(b_data$.x), max(b_data$.x) ),
-                             breaks = breaks.x,
-                             trans = custom_scale,
-                             labels = custom_tick_labels(breaks.x),
-                             sec.axis = dup_axis(labels=c())) +
-          scale_y_continuous(limits = c( min(b_data$.y), max(b_data$.y) ),
-                             breaks = breaks.y,
-                             trans = custom_scale,
-                             labels = custom_tick_labels(breaks.y),
-                             sec.axis = dup_axis(labels = c())) +
-          geom_scattermore(
-            data=t_data,
-            mapping=aes(x=.x, y=.y),
-            pointsize=2,
-            col=colors,
-            pixels=c(900,900)) +
-          labs(x=lab_names[1], y=lab_names[2])  +
-          theme(panel.background = element_rect(fill = 'white', colour = 'white'),
-                axis.line.x=element_line(color="#07070F" ),
-                axis.line.y=element_line(color="#07070F" ),
-                text = element_text(size=8),
-                axis.ticks.x.top = element_blank(),
-                axis.title.x.top = element_blank(),
-                axis.ticks.y.right = element_blank(),
-                axis.title.y.right = element_blank()) 
-        
-        p<- set_biexp_ticks(p, breaks.x)
-        
-        pb <- ggplot_build(p)
-        
-        ad <- data.frame(.x = pb$layout$panel_params[[1]]$x.range,
-                         .y = pb$layout$panel_params[[1]]$y.range)
-        br <- transform_xy( ad, custom_scale, df_range = b_data)
-        
-        image$range_x <- br$.x
-        image$range_y <- br$.y
-        
-        
-      }
- 
-      
-      ggsave(imgfile, units='in', width=3, height=3, p ) 
 
      }else{
       session$sendCustomMessage("setViewOnly", runif(1))
     }
     
-    
-    
-    
-    img <- readPNG(imgfile)
-    # 7, 7, 15
-    
-    mark_pix <- c(7/255.0, 7/255.0, 15/255.0)
-    # abs((x - mark_pix[1])) < 0.05
-    pixels <- img[450, ,]
-    redPx <- unlist(lapply(pixels[,1], function(x){
-      return(  abs((x - mark_pix[1])) < 0.01 )
-    }))
-    greenPx <- unlist(lapply(pixels[,2], function(x){
-      return(  abs((x - mark_pix[2])) < 0.01 )
-    }))
-    bluePx <- unlist(lapply(pixels[,3], function(x){
-      return(  abs((x - mark_pix[3])) < 0.01 )
-    }))
-    
-    
-    marks.x <- which((redPx + greenPx + bluePx) == 3)
-    
-    
-    k <- 1
-    x.plot.lim <- c(marks.x[k])
 
-    prev_marks <- marks.x[k]
-    while( k <= length(marks.x) && (marks.x[k] - prev_marks)<=1 ){
-      x.plot.lim[1] <- marks.x[k]
-      prev_marks <- marks.x[k]
-      k <- k + 1
-    }
-    k <- k + 1
-    x.plot.lim[2] <- marks.x[k]
-    
-    pixels <- img[,450 ,]
-    redPx <- unlist(lapply(pixels[,1], function(x){
-      return(  abs((x - mark_pix[1])) < 0.01 )
-    }))
-    greenPx <- unlist(lapply(pixels[,2], function(x){
-      return(  abs((x - mark_pix[2])) < 0.01 )
-    }))
-    bluePx <- unlist(lapply(pixels[,3], function(x){
-      return(  abs((x - mark_pix[3])) < 0.01 )
-    }))
-    
-    
-    marks.y <- which((redPx + greenPx + bluePx) == 3)
-    
-    k <- 1
-    y.plot.lim <- c(marks.y[k])
-    prev_marks <- marks.y[k]
-    while( k <= length(marks.y) && (marks.y[k] - prev_marks)<=1 ){
-      y.plot.lim <- marks.y[k]
-      prev_marks <- marks.y[k]
-      k <- k + 1
-    }
-    k <- k + 1
-    y.plot.lim[2] <- marks.y[k]
-    # browser()
-    image$plot_lim_x <- x.plot.lim
-    image$plot_lim_y <- y.plot.lim
-    
     image$loaded <- runif(1)
     
-    session$sendCustomMessage("axis_bounds",append(x.plot.lim, y.plot.lim) )
+    session$sendCustomMessage("axis_bounds",append(image$plot_lim_x, image$plot_lim_y ) )
     
     
     list(src = imgfile,
@@ -303,7 +116,7 @@ server <- shinyServer(function(input, output, session) {
     }
 
     
-    point_cloud <- df$data
+    point_cloud <- df$data[,1:2]
     range.x <- max(image$range_x) - min(image$range_x) #max( max(point_cloud[,1]*1.1 ) + 0 )
     range.y <- max(image$range_y) - min(image$range_y) #max( max(point_cloud[,2]*1.1 ) + 0 )
     
@@ -314,7 +127,7 @@ server <- shinyServer(function(input, output, session) {
          # 'range.x', 'range.y', 'im_rx', 'im_ry',
          # file='test.Rda')
     if( plot_mode$trans == 'biexp' ){
-      t_data <- df$data
+      t_data <- df$data[,1:2]
       colnames(t_data)    <- c('.x','.y')
       
       custom_biexp_scale <- create_custom_biexp_scale(pos_decades = 5, 
@@ -327,7 +140,7 @@ server <- shinyServer(function(input, output, session) {
     }
     
     if( plot_mode$trans == 'logicle' ){
-      t_data <- df$data
+      t_data <- df$data[,1:2]
       colnames(t_data)    <- c('.x','.y')
       
       custom_logicle_scale <- create_custom_logicle_scale()
@@ -542,14 +355,19 @@ server <- shinyServer(function(input, output, session) {
     show_modal_spinner(spin="fading-circle", text = "Saving")
     # SAVE this as specific file to be read if needed... 
 
-    fout <- paste0( tempfile(), ".png") #paste0('/tmp/', ctx$workflowId, '_', ctx$stepId, '.png')
+    fout <- paste0( tempfile(), ".png") 
     raw <- base64enc::base64decode(what = substr(input$save[1], 23, nchar(input$save[1])))
     png::writePNG(png::readPNG(raw), fout)    
 
     img_df <- tim::png_to_df(fout, filename = "Gate.png")
 
+    
+    
+    wkf<-ctx$client$workflowService$get(ctx$workflowId, ctx$stepId)
+    stp <- Find(function(p) identical(p$id, ctx$stepId), wkf$steps)
+    
     img_df$mimetype <- 'image/png'
-    img_df$filename <- "Gate.png"
+    img_df$filename <- paste0( stp$name, '_Gate') 
 
 
     img_df <- img_df %>%
@@ -559,25 +377,23 @@ server <- shinyServer(function(input, output, session) {
     
     ctx <- getCtx(session)
     
-    xname <- tercen::remove.prefix( ctx$xAxis[[1]] )
-    yname <- tercen::remove.prefix( ctx$yAxis[[1]] )
-
-    # flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
-    #   mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
-    #   mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
-    #   ctx$addNamespace() %>%
-    #   as_relation() %>%
-    #   as_join_operator(list(), list())
     
+    labs <- unname(as.list(ctx$rselect()))[[1]]
+
+    xname <- tercen::remove.prefix( labs[1] )
+    yname <- tercen::remove.prefix( labs[2] )
+
+    # browser()
     flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
-      mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
-      mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
-      mutate(.i = seq_len(nrow(.)) - 1L) %>%
+      # mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
+      # mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
+      # mutate(.i = seq_len(nrow(.)) - 1L) %>%
+      mutate(.i = unlist(unname(df$data[,3]))) %>%
       ctx$addNamespace() %>%
       as_relation() %>%
-      # left_join_relation(ctx$crelation, ".i", ctx$crelation$rids) %>%
+      left_join_relation(ctx$crelation, ".i", ctx$crelation$rids) %>%
       left_join_relation(img_df, list(), list()) %>%
-      as_join_operator(list(), list()) %>%
+      as_join_operator(ctx$cnames, ctx$cnames) %>%
       save_relation(ctx)
     
     
@@ -603,15 +419,65 @@ get_data <- function( session ){
   
   show_modal_spinner(spin="fading-circle", text = "Loading")
   
-  df <- ctx %>%
-    select(.x, .y)
+  data_mode <- NULL
   
-  names(df) <- c(ctx$xAxis[[1]], ctx$yAxis[[1]])
+  if( nrow(ctx$rselect()) == 2 ){
+    data_mode <- "2d"  
+    # NOTE
+    # If the column will always be rowId, then this step is unnecessary
+    # and .ci can be used instead
+    col_df <- ctx$cselect() %>%
+      mutate( .ci = seq(0,nrow(.)-1) )
+
+    chnames <- unname(as.list(ctx$rselect()))[[1]]
+        
+    tmp_df <- ctx$select( list(".y", ".ri", ".ci") )  %>%
+      dplyr::left_join(., col_df, by=".ci")
+    df <- data.frame( 
+      x = tmp_df %>% 
+        dplyr::filter( .ri == 0) %>% 
+        dplyr::select(.y),
+      y = tmp_df %>% 
+        dplyr::filter( .ri == 1) %>% 
+        dplyr::select(.y),
+      rowid = tmp_df %>% 
+        dplyr::filter(.ri == 1) %>% 
+        dplyr::select(rowId))
+    
+    names(df) <- c(chnames[1], chnames[2], "rowId")
+  }
+  
+  if( nrow(ctx$rselect()) == 1 ){
+    data_mode <- "1d"  
+    
+    col_df <- ctx$cselect() %>%
+      mutate( .ci = seq(0,nrow(.)-1) )
+    
+    chnames <- unname(as.list(ctx$rselect()))[[1]]
+
+    
+    tmp_df <- ctx$select( list(".y", ".ri", ".ci") )  %>%
+      dplyr::left_join(., col_df, by=".ci")
+    df <- data.frame( 
+      y = tmp_df %>% 
+        dplyr::filter( .ri == 0) %>% 
+        dplyr::select(.y),
+      rowid = tmp_df %>% 
+        dplyr::filter(.ri == 0) %>% 
+        dplyr::select(rowId))
+    
+    names(df) <- c(chnames[1], "rowId")
+  }
+  
+
+  # df <- ctx %>%
+  #   select(.x, .y)
+    # names(df) <- c(ctx$xAxis[[1]], ctx$yAxis[[1]])
   
   progress$close()
   # remove_modal_spinner()
   
-  return(df)
+  return( list(df, data_mode))
   
 }
 
@@ -622,58 +488,9 @@ getMode <- function(session){
   return(query[["mode"]])
 }
 
-nearest_factor10 <- function( num, label=TRUE, factor=4){
-  # -67.5  4932.5  9932.5 14932.5 19932.5 24932.5 29932.5 34932.5 39932.5 44932.5 49932.5 54932.5 59932.5 64932.5 69932.5 74932.5 79932.5 84932.5
-  # [19] 89932.5
-  
-  neg_fac <- 1
-  if(num<0){
-    neg_fac <- -1
-  }
-  num <- abs(num)
-  
-  if( num < 10^factor ){
-    if(label == FALSE){
-      return( neg_fac*(10^factor) )
-    }else{
-      num<-10^factor
-      round_num <- paste0(
-        format( neg_fac * ( num - num %% 10^factor )/1e3, scientific=FALSE),
-        'K')
-      return( round_num )
-    }
-  }
-  
-  if(label == FALSE){
-    return(neg_fac * ( num - num %% 10^factor ) )
-  }
-  round_num <- paste0(
-    format( neg_fac * ( num - num %% 10^factor )/1e3, scientific=FALSE),
-    'K')
-  
-  
-  return( round_num )
-}
 
 
-transform_xy <- function( t_data, custom_scale, df_range=NULL){
-  b_data <- t_data
-  if( is.null(df_range)){
-    df_range <- t_data
-  }
-  xt <- custom_scale$transform(x = t_data$.x  ) 
-  xtn <- (xt - min(xt))/(max(xt)-min(xt))
-  rd <- max(df_range$.x)-min(df_range$.x)
-  b_data[,1] <- (xtn * rd) + min(df_range$.x) 
-  
-  yt <- custom_scale$transform(x = t_data$.y  ) 
-  ytn <- (yt - min(yt))/(max(yt)-min(yt))
-  rd <- max(df_range$.y)-min(df_range$.y)
-  b_data[,2] <- (ytn * rd)+min(df_range$.y) 
-  
-  return(b_data)
-  
-}
+
 
 
 ############################################

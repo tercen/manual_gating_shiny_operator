@@ -23,14 +23,19 @@ library(base64enc)
 
 # CD4/CD8
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/95dd2038-15bb-4edf-ac91-1298a1189632
-options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-options("tercen.stepId"= "95dd2038-15bb-4edf-ac91-1298a1189632")
+# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+# options("tercen.stepId"= "95dd2038-15bb-4edf-ac91-1298a1189632")
 
 
 # 1D
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/c1c6c35e-3e6f-436c-bcfa-9cb5689604df
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
 # options("tercen.stepId"= "c1c6c35e-3e6f-436c-bcfa-9cb5689604df")
+
+# SCatter
+# http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/a3580d65-a077-4864-ace5-27716cc2dc55
+# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+# options("tercen.stepId"= "a3580d65-a077-4864-ace5-27716cc2dc55")
 
 
 source('plot_helpers.R')
@@ -43,7 +48,11 @@ server <- shinyServer(function(input, output, session) {
                            range_x=NULL, 
                            plot_lim_x=NULL,
                            range_y=NULL,
-                           plot_lim_y=NULL)
+                           plot_lim_y=NULL,
+                           breaks_x=NULL,
+                           breaks_x_rel=NULL,
+                           breaks_y=NULL,
+                           breaks_y_rel=NULL,)
   plot_mode <- reactiveValues( trans="linear", type="2d" )
   
   
@@ -61,7 +70,7 @@ server <- shinyServer(function(input, output, session) {
       df$data <- tmp[[1]]
       plot_mode$type <- tmp[[2]]
       
-
+      
       # lab_names <- names(df$data)
       
       if( plot_mode$type  == '2d' ){
@@ -71,14 +80,32 @@ server <- shinyServer(function(input, output, session) {
         image$range_y <- res[[3]]
         image$plot_lim_x <- res[[4]]
         image$plot_lim_y <- res[[5]]
+        image$breaks_x <- res[[6]]
+        image$breaks_x_rel <- res[[7]]
+        image$breaks_y <- res[[8]]
+        image$breaks_y_rel <- res[[9]]
       }
       
-
-     }else{
+      if( plot_mode$type  == '1d' ){
+        res <- create_plot_1d(df$data, plot_mode$trans)
+        imgfile <- res[[1]]
+        image$range_x <- res[[2]]
+        image$range_y <- res[[3]]
+        image$plot_lim_x <- res[[4]]
+        image$plot_lim_y <- res[[5]]
+        image$breaks_x <- res[[6]]
+        image$breaks_x_rel <- res[[7]]
+        image$breaks_y <- res[[8]]
+        image$breaks_y_rel <- res[[9]]
+        session$sendCustomMessage("set_data_mode", '1d')
+      }
+      
+      
+    }else{
       session$sendCustomMessage("setViewOnly", runif(1))
     }
     
-
+    
     image$loaded <- runif(1)
     
     session$sendCustomMessage("axis_bounds",append(image$plot_lim_x, image$plot_lim_y ) )
@@ -90,7 +117,7 @@ server <- shinyServer(function(input, output, session) {
          alt = "Scatter plot failed to load.")
   }, deleteFile = FALSE)
   
-
+  
   # ===========================================================
   # EVENT triggered when a polygon drawing is finished
   # to calculate the % of data points inside of it
@@ -104,17 +131,14 @@ server <- shinyServer(function(input, output, session) {
     
     coords.x <- unlist(lapply( input$polygon$coords, function(x) x$x ))
     coords.y <- unlist(lapply( input$polygon$coords, function(x) x$y ))
-
-    # coords.x.px <- coords.x
-    # coords.y.px <- coords.y
+    
     
     coords.type <- input$polygon$type 
     
-    if( coords.type == 'quadrant'){
+    if( coords.type %in% c('quadrant', 'line')){
       coords.x <- append( coords.x, image$plot_lim_x )
       coords.y <- append( coords.y, image$plot_lim_y )
     }
-
     
     point_cloud <- df$data[,1:2]
     range.x <- max(image$range_x) - min(image$range_x) #max( max(point_cloud[,1]*1.1 ) + 0 )
@@ -124,8 +148,8 @@ server <- shinyServer(function(input, output, session) {
     im_ry <- image$range_y
     
     # save('axis.limits', 'coords.x', 'coords.y', 'point_cloud',
-         # 'range.x', 'range.y', 'im_rx', 'im_ry',
-         # file='test.Rda')
+    # 'range.x', 'range.y', 'im_rx', 'im_ry',
+    # file='test.Rda')
     if( plot_mode$trans == 'biexp' ){
       t_data <- df$data[,1:2]
       colnames(t_data)    <- c('.x','.y')
@@ -134,9 +158,10 @@ server <- shinyServer(function(input, output, session) {
                                                       neg_decades = -1.5, 
                                                       width_basis = -13)
       
+      point_cloud <- transform_xy( t_data, custom_biexp_scale )
       
-      point_cloud <- transform_xy( t_data, custom_biexp_scale)
-
+  
+      
     }
     
     if( plot_mode$trans == 'logicle' ){
@@ -144,22 +169,30 @@ server <- shinyServer(function(input, output, session) {
       colnames(t_data)    <- c('.x','.y')
       
       custom_logicle_scale <- create_custom_logicle_scale()
-
+      
       point_cloud <- transform_xy( t_data, custom_logicle_scale)
-
+      
     }
     
     range.plot.x <- abs(axis.limits[3] - axis.limits[1])
     range.plot.y <- abs(axis.limits[2] - axis.limits[4])
     
-    # 0.06 -> default margin
+    # browser()
+    coords.x <- (coords.x- axis.limits[1])/range.plot.x 
+    coords.y <- ((coords.y - axis.limits[4])/range.plot.y)
     
-    coords.x <- (coords.x- axis.limits[1])/range.plot.x + 0.06/2
-    coords.y <- (1-0.06) - ((coords.y - axis.limits[4])/range.plot.y) + 0.06/2
+    coords.poly.x <- unlist(lapply( coords.x, function(x){
+      get_converted_scale( x, image$breaks_x, image$breaks_x_rel )
+    } ))
     
-
-    poly_df <- data.frame("x"=(((coords.x - 0.06/2) * range.x) / 1) + min(image$range_x ),
-                          "y"=(((coords.y - 0) * range.y) / 1) + min(image$range_y) )
+    coords.poly.y <- unlist(lapply( 1-coords.y, function(x){
+      get_converted_scale( x, image$breaks_y, image$breaks_y_rel, decreasing=TRUE )
+    } ))
+    
+    # browser()
+    poly_df <- data.frame("x"=coords.poly.x,
+                          "y"=coords.poly.y )
+    # # NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
 
     names(point_cloud) <- c('x', 'y')
     
@@ -168,107 +201,69 @@ server <- shinyServer(function(input, output, session) {
     poly.px.y <- c()
     
     if( coords.type == 'poly'){
-      point_cloud <- point_cloud %>%
-          mutate(flag = point.in.polygon( .$x, .$y, poly_df$x, poly_df$y, mode.checked = FALSE ))  
       
-      poly.px.x <-append( poly.px.x, coords.x*range.plot.x)
-      poly.px.y <-append( poly.px.y, coords.y*range.plot.y)
+      # flag <- point.in.polygon(  df$data[,1],  df$data[,2],
+                                # poly_df$x, poly_df$y, mode.checked = FALSE )
+      
+      
+      flag <- point.in.polygon( point_cloud$x,  point_cloud$y,
+                                 poly_df$x, poly_df$y, mode.checked = FALSE )
+      
+      flag[flag>0] <- 1
+
+      point_cloud <- point_cloud %>%
+        mutate(flag = flag)
+
+      poly.px.x <-append( poly.px.x, list(coords.x[1:(length(coords.x)-1)]*900+image$plot_lim_x[1]))
+      poly.px.y <-append( poly.px.y, list(((coords.y[1:(length(coords.y)-1)])*900)-image$plot_lim_y[1]))
     }
     
     if( coords.type == 'quadrant'){
-
-      poly.quadrant <- data.frame( x=c(poly_df$x[6], poly_df$x[1], poly_df$x[1], poly_df$x[6], poly_df$x[6]),
-                                   y=c(poly_df$y[6], poly_df$y[6], poly_df$y[4], poly_df$y[4], poly_df$y[6])
-                                   )
-      poly.px.x <-append( poly.px.x,
-                       c(coords.x[6]*range.plot.x,
-                       coords.x[1]*range.plot.x, 
-                       coords.x[1]*range.plot.x, 
-                       coords.x[6]*range.plot.x, 
-                       coords.x[6]*range.plot.x))
+      # browser()
+      quad <- create_quadrant(  poly_df, c(6,1), c(6,4), coords.x, coords.y, range.plot.x, range.plot.y, image$plot_lim_x, image$plot_lim_y  )
+      poly.quadrant <- quad[[1]]
+      poly.px.x <-append( poly.px.x, list(quad[[2]]))
+      poly.px.y <-append( poly.px.y, list(quad[[3]]))
       
-      poly.px.y <-append( poly.px.y,
-                          c(coords.y[6]*range.plot.y,
-                            coords.y[6]*range.plot.y, 
-                            coords.y[4]*range.plot.y, 
-                            coords.y[4]*range.plot.y, 
-                            coords.y[6]*range.plot.y))
+  
       
       flag.top.left <- point.in.polygon( point_cloud$x, point_cloud$y,
-                        poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+                                         poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
       
       
       
+      quad <- create_quadrant(  poly_df, c(1,5), c(6,4), coords.x, coords.y, range.plot.x, range.plot.y, image$plot_lim_x, image$plot_lim_y  )
+      poly.quadrant <- quad[[1]]
+      poly.px.x <-append( poly.px.x, list(quad[[2]]))
+      poly.px.y <-append( poly.px.y, list(quad[[3]]))
       
-      poly.quadrant <- data.frame( x=c(poly_df$x[1]+1, poly_df$x[5], poly_df$x[5], poly_df$x[1]+1, poly_df$x[1]+1),
-                                   y=c(poly_df$y[6], poly_df$y[6], poly_df$y[4], poly_df$y[4], poly_df$y[6])
-      )
-      
-      poly.px.x <-append( poly.px.x,
-                          c((coords.x[1]+1)*range.plot.x,
-                            coords.x[5]*range.plot.x, 
-                            coords.x[5]*range.plot.x, 
-                            (coords.x[1]+1)*range.plot.x, 
-                            (coords.x[1]+1)*range.plot.x))
-      
-      poly.px.y <-append( poly.px.y,
-                          c(coords.y[6]*range.plot.y,
-                            coords.y[6]*range.plot.y, 
-                            coords.y[4]*range.plot.y, 
-                            coords.y[4]*range.plot.y, 
-                            coords.y[6]*range.plot.y))
-      
+
+      # 
       flag.top.right <- point.in.polygon( point_cloud$x, point_cloud$y,
-                                         poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
-      
-      
-      
-      poly.quadrant <- data.frame( x=c(poly_df$x[6], poly_df$x[1], poly_df$x[1], poly_df$x[6], poly_df$x[6]),
-                                   y=c(poly_df$y[4]-1, poly_df$y[4]-1, poly_df$y[3], poly_df$y[3], poly_df$y[4]-1)
-      )
-      
-      
-      poly.px.x <-append( poly.px.x,
-                          c(coords.x[6]*range.plot.x,
-                            coords.x[1]*range.plot.x, 
-                            coords.x[1]*range.plot.x, 
-                            coords.x[6]*range.plot.x, 
-                            coords.x[6]*range.plot.x))
-      
-      poly.px.y <-append( poly.px.y,
-                          c((coords.y[4]-1)*range.plot.y,
-                            (coords.y[4]-1)*range.plot.y, 
-                            coords.y[3]*range.plot.y, 
-                            coords.y[3]*range.plot.y, 
-                            (coords.y[4]-1)*range.plot.y))
-      
-      flag.bottom.left <- point.in.polygon( point_cloud$x, point_cloud$y,
-                                         poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
-      
-      
-      poly.quadrant <- data.frame( x=c(poly_df$x[1], poly_df$x[5], poly_df$x[5], poly_df$x[1], poly_df$x[1]),
-                                   y=c(poly_df$y[4]-1, poly_df$y[4]-1, poly_df$y[3], poly_df$y[3], poly_df$y[4]-1)
-      )
-      
-      
-      poly.px.x <-append( poly.px.x,
-                          c((coords.x[1]+1)*range.plot.x,
-                            coords.x[5]*range.plot.x, 
-                            coords.x[5]*range.plot.x, 
-                            (coords.x[1]+1)*range.plot.x, 
-                            (coords.x[1]+1)*range.plot.x))
-      
-      poly.px.y <-append( poly.px.y,
-                          c((coords.y[4]-1)*range.plot.y,
-                            (coords.y[4]-1)*range.plot.y, 
-                            coords.y[3]*range.plot.y, 
-                            coords.y[3]*range.plot.y, 
-                            (coords.y[4]-1)*range.plot.y))
-      
-      flag.bottom.right <- point.in.polygon( point_cloud$x, point_cloud$y,
                                           poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
       
       
+      quad <- create_quadrant(  poly_df, c(6,1), c(4,3), coords.x, coords.y, range.plot.x, range.plot.y, image$plot_lim_x, image$plot_lim_y  )
+      poly.quadrant <- quad[[1]]
+      poly.px.x <-append( poly.px.x, list(quad[[2]]))
+      poly.px.y <-append( poly.px.y, list(quad[[3]]))
+
+      
+      flag.bottom.left <- point.in.polygon( point_cloud$x, point_cloud$y,
+                                            poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+      
+      
+      quad <- create_quadrant(  poly_df, c(1,5), c(4,3), coords.x, coords.y, range.plot.x, range.plot.y, image$plot_lim_x, image$plot_lim_y  )
+      poly.quadrant <- quad[[1]]
+      poly.px.x <-append( poly.px.x, list(quad[[2]]))
+      poly.px.y <-append( poly.px.y, list(quad[[3]]))
+      
+
+      
+      flag.bottom.right <- point.in.polygon( point_cloud$x, point_cloud$y,
+                                             poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+      
+      # browser()
       flag.top.left[flag.top.left >= 1] <- 1
       flag.top.right[flag.top.right >= 1] <- 2
       flag.bottom.left[flag.bottom.left >= 1] <- 3
@@ -282,7 +277,31 @@ server <- shinyServer(function(input, output, session) {
       point_cloud <- point_cloud %>%
         mutate(flag = flag)  
     }
-
+    
+    if( coords.type == 'line'){
+      # browser()
+      quad <- create_quadrant(  poly_df, c(4,1), c(1,3), coords.x, coords.y, range.plot.x, range.plot.y, image$plot_lim_x, image$plot_lim_y  )
+      poly.px.x <-append( poly.px.x, list(quad[[2]]))
+      poly.px.y <-append( poly.px.y, list(quad[[3]]))
+      
+      flag.left <- point_cloud$x < (poly_df$x[1])
+      
+      quad <- create_quadrant(  poly_df, c(1,5), c(1,3), coords.x, coords.y, range.plot.x, range.plot.y, image$plot_lim_x, image$plot_lim_y  )
+      poly.px.x <-append( poly.px.x, list(quad[[2]]))
+      poly.px.y <-append( poly.px.y, list(quad[[3]]))
+      
+      flag.right <- point_cloud$x >= (poly_df$x[1])
+      
+      flag.left[flag.left >= 1] <- 1
+      flag.right[flag.right >= 1] <- 2
+      
+      flag <- flag.left + flag.right
+      
+      
+      point_cloud <- point_cloud %>%
+        mutate(flag = flag)  
+    }
+    
     pcts <- c()
     xs <- c()
     ys <- c()
@@ -295,32 +314,22 @@ server <- shinyServer(function(input, output, session) {
         pct <-  c(paste0( format(pct, digits = 3, scientific = FALSE), '%') )
         
         pcts <- append( pcts, pct)
-
-        xs <- append( xs, image$plot_lim_x[1] + mean( (poly.px.x[fl] )) )
-        ys <- append( ys, image$plot_lim_y[2] - mean( (poly.px.y[fl] )) + image$plot_lim_y[1] )
+        
+        xs <- append( xs, mean( (poly.px.x[[fl]] )) )
+        ys <- append( ys,  mean( (poly.px.y[[fl]] )) )
       }
     }
     
-    # image$plot_lim_x[1]
-    # browser()
-    # selected$pct <- 100*sum(point_cloud$flag == 1) / length(point_cloud$flag)
-    # selected$x <- mean( (coords.x )    * range.x )
-    # selected$y <- mean( (coords.y )    * range.y )
-    # selected$pct <- pcts
-    # selected$x <- xs
-    # selected$y <- ys
     selected$flag <- point_cloud$flag
-
-    # df$flag <- point_cloud$flag
-    # session$sendCustomMessage("pct_selected",  paste0( format(selected$pct, digits = 3, scientific = FALSE), '%') )
+    
     coords.x.px <- coords.x
     coords.y.px <- coords.y
     session$sendCustomMessage("flag_info",
-                               list(
-                                 "pct"=as.list(pcts),
-                                 "x"=as.list(xs),
-                                 "y"=as.list(ys)
-                               ))
+                              list(
+                                "pct"=as.list(pcts),
+                                "x"=as.list(xs),
+                                "y"=as.list(ys)
+                              ))
   })
   
   observeEvent( input$pageLoaded, {
@@ -354,13 +363,13 @@ server <- shinyServer(function(input, output, session) {
     # Check the barplot operator --> Do the result plot
     show_modal_spinner(spin="fading-circle", text = "Saving")
     # SAVE this as specific file to be read if needed... 
-
+    
     fout <- paste0( tempfile(), ".png") 
     raw <- base64enc::base64decode(what = substr(input$save[1], 23, nchar(input$save[1])))
     png::writePNG(png::readPNG(raw), fout)    
-
+    
     img_df <- tim::png_to_df(fout, filename = "Gate.png")
-
+    
     
     
     wkf<-ctx$client$workflowService$get(ctx$workflowId, ctx$stepId)
@@ -368,27 +377,27 @@ server <- shinyServer(function(input, output, session) {
     
     img_df$mimetype <- 'image/png'
     img_df$filename <- paste0( stp$name, '_Gate') 
-
-
+    
+    
     img_df <- img_df %>%
       ctx$addNamespace() %>%
       as_relation() #%>%
-      #as_join_operator(list(), list()) 
+    #as_join_operator(list(), list()) 
     
     ctx <- getCtx(session)
     
     
     labs <- unname(as.list(ctx$rselect()))[[1]]
-
-    xname <- tercen::remove.prefix( labs[1] )
-    yname <- tercen::remove.prefix( labs[2] )
-
+    
+    # xname <- tercen::remove.prefix( labs[1] )
+    # yname <- tercen::remove.prefix( labs[2] )
+    
     # browser()
     flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
       # mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
       # mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
       # mutate(.i = seq_len(nrow(.)) - 1L) %>%
-      mutate(.i = unlist(unname(df$data[,3]))) %>%
+      mutate(.i = unlist(unname(df$data["rowId"]))) %>%
       ctx$addNamespace() %>%
       as_relation() %>%
       left_join_relation(ctx$crelation, ".i", ctx$crelation$rids) %>%
@@ -397,17 +406,17 @@ server <- shinyServer(function(input, output, session) {
       save_relation(ctx)
     
     
-      
+    
     
     # polyDf <-data.frame('x'=coords.x, 'y'=coords.y, '.ci'=as.integer(0*seq(1,length(coords.x))) ) %>%
-      # ctx$addNamespace()
+    # ctx$addNamespace()
     # browser()
     # ctx$save(list(flagDf,img_df))
     # save_relation(list(flagDf,img_df), ctx)
     
     remove_modal_spinner()
   })
-      
+  
   
 })
 
@@ -428,9 +437,9 @@ get_data <- function( session ){
     # and .ci can be used instead
     col_df <- ctx$cselect() %>%
       mutate( .ci = seq(0,nrow(.)-1) )
-
+    
     chnames <- unname(as.list(ctx$rselect()))[[1]]
-        
+    
     tmp_df <- ctx$select( list(".y", ".ri", ".ci") )  %>%
       dplyr::left_join(., col_df, by=".ci")
     df <- data.frame( 
@@ -454,7 +463,7 @@ get_data <- function( session ){
       mutate( .ci = seq(0,nrow(.)-1) )
     
     chnames <- unname(as.list(ctx$rselect()))[[1]]
-
+    
     
     tmp_df <- ctx$select( list(".y", ".ri", ".ci") )  %>%
       dplyr::left_join(., col_df, by=".ci")
@@ -469,10 +478,10 @@ get_data <- function( session ){
     names(df) <- c(chnames[1], "rowId")
   }
   
-
+  
   # df <- ctx %>%
   #   select(.x, .y)
-    # names(df) <- c(ctx$xAxis[[1]], ctx$yAxis[[1]])
+  # names(df) <- c(ctx$xAxis[[1]], ctx$yAxis[[1]])
   
   progress$close()
   # remove_modal_spinner()
@@ -489,9 +498,64 @@ getMode <- function(session){
 }
 
 
+#quad <- create_quadrant(  poly_df, c(4,1), c(1,3), coords.x, coords.y  )
+create_quadrant <- function(  poly_df, x, y, coords.x, coords.y, range.plot.x, range.plot.y, plot_lim_x, plot_lim_y  ){
+  poly.quadrant <- data.frame( x=c(poly_df$x[x[1]], poly_df$x[x[2]], poly_df$x[x[2]], poly_df$x[x[1]], poly_df$x[x[1]]),
+                               y=c(poly_df$y[y[1]], poly_df$y[y[1]], poly_df$y[y[2]], poly_df$y[y[2]], poly_df$y[y[1]])
+  )
+  
+  poly.px.x <-   c(coords.x[x[1]]*range.plot.x + plot_lim_x[1],
+                   coords.x[x[2]]*range.plot.x + plot_lim_x[1], 
+                   coords.x[x[2]]*range.plot.x + plot_lim_x[1], 
+                   coords.x[x[1]]*range.plot.x + plot_lim_x[1], 
+                   coords.x[x[1]]*range.plot.x + plot_lim_x[1])
+  
+  poly.px.y <-   c(coords.y[y[1]]*range.plot.y + plot_lim_y[1],
+                   coords.y[y[1]]*range.plot.y + plot_lim_y[1], 
+                   coords.y[y[2]]*range.plot.y + plot_lim_y[1], 
+                   coords.y[y[2]]*range.plot.y + plot_lim_y[1], 
+                   coords.y[y[1]]*range.plot.y + plot_lim_y[1])
+  
+  return(list(poly.quadrant, poly.px.x, poly.px.y))
+}
 
 
 
+get_converted_scale <- function( x, breaks, breaks_rel, decreasing=FALSE ){
+  # breaks <- c(6000,  7000,  8000,  9000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000)
+  # breaks_rel <- c(0.014, 0.072, 0.123, 0.167, 0.206, 0.467, 0.619, 0.727, 0.811, 0.879, 0.937, 0.987)
+  # x <-0
+  # 
+  
+  if( x <= min(breaks_rel)){
+    return(min(breaks))
+  }else{
+    if( decreasing == FALSE){
+      low_mark <- which(unlist(lapply( breaks_rel, function(v){
+        return(v < x)
+      })))
+      rng.x.idx <- c( low_mark[length(low_mark)], low_mark[length(low_mark)]+1)
+    }else{
+      # browser()
+      low_mark <- which(unlist(lapply( breaks_rel, function(v){
+        return(v >= x)
+      })))
+      rng.x.idx <- c( low_mark[1]-1, low_mark[1] )
+      
+    }
+    
+    
+    rng.x     <- c( breaks[rng.x.idx[1]], breaks[rng.x.idx[2]] )
+    rng.x.rel <- c( breaks_rel[rng.x.idx[1]], breaks_rel[rng.x.idx[2]] )
+    
+  }
+  
+  
+  # NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
+  
+  xt <- (((x - rng.x.rel[1]) * (  rng.x[2]-rng.x[1] )) / (rng.x.rel[2]-rng.x.rel[1])) + rng.x[1]
+  return(xt)
+}
 
 ############################################
 #### This part should not be modified

@@ -158,6 +158,10 @@ function select_button(objId){
     if( objId == 'quadDrawBtn'){
       currentMode = 'quadDraw';
     }
+    
+    if( objId == 'lineDrawBtn'){
+      currentMode = 'lineDraw';
+    }
   }
     
 }
@@ -195,6 +199,15 @@ Shiny.addCustomMessageHandler('setViewOnly', function(ignore){
   document.getElementById('tool_label').innerHTML = "Manual Gating (View Mode)";
 })
 
+Shiny.addCustomMessageHandler('set_data_mode', function(data_mode){
+
+  if(data_mode == '1d'){
+    document.getElementById('polyDrawBtn').style = 'visibility:hidden; display:none';
+    document.getElementById('quadDrawBtn').style = 'visibility:hidden; display:none';
+    document.getElementById('lineDrawBtn').style = 'visibility:visible; display:inline';
+  }
+})
+
 
 // =========================================================
 // Show selected % after the polygon is closed
@@ -219,6 +232,10 @@ Shiny.addCustomMessageHandler('flag_info', function(flag_info){
     render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,5) );
   }
   
+  if(currentMode == 'lineDraw'){
+    render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,3) );
+  }
+  
 
   let pct = flag_info.pct;
   let x = flag_info.x;
@@ -241,19 +258,6 @@ Shiny.addCustomMessageHandler('flag_info', function(flag_info){
     ctx.fillText(pct[i], x[i], y[i]);
     
   }
-  
-  //let x = 0;
-  //let y = 0;
-  
-  //for (let i = 0; i < globalThis.plist.length; i++) {
-  //  x = x + globalThis.plist[i].x
-  //  y = y + globalThis.plist[i].y
-  //}
-  
-  //x = x / globalThis.plist.length;
-  //y = y / globalThis.plist.length;
-  
-
   
 
 
@@ -373,7 +377,32 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
           render_quadrant(canvas, coords, globalThis.plist.slice(1,5) );
         }
         
-        //
+        if(currentMode == 'lineDraw'){
+          globalThis.plist = new Array();
+          globalThis.plist.push(coords);
+          let mid_y = Math.abs(axis_bounds[2]-axis_bounds[3])/2;
+          let mid_x = Math.abs(axis_bounds[1]-axis_bounds[0])/2;
+          
+
+          globalThis.plist.push( 
+            {x: coords.x, y: axis_bounds[2]}
+          );
+            
+          globalThis.plist.push( 
+            {x: coords.x, y: axis_bounds[3]}
+          );
+            
+          let poly = {
+            'coords': globalThis.plist,
+            'type': 'line'
+          };
+              
+              
+          Shiny.setInputValue('polygon', poly);
+          
+          
+          render_quadrant(canvas, coords, globalThis.plist.slice(1,3) );
+        }
       
     }
     

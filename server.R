@@ -39,6 +39,7 @@ library(base64enc)
 
 
 source('plot_helpers.R')
+# source('gating_data_class.R')
 
 server <- shinyServer(function(input, output, session) {
   
@@ -159,9 +160,7 @@ server <- shinyServer(function(input, output, session) {
                                                       width_basis = -13)
       
       point_cloud <- transform_xy( t_data, custom_biexp_scale )
-      
-  
-      
+
     }
     
     if( plot_mode$trans == 'logicle' ){
@@ -201,11 +200,6 @@ server <- shinyServer(function(input, output, session) {
     poly.px.y <- c()
     
     if( coords.type == 'poly'){
-      
-      # flag <- point.in.polygon(  df$data[,1],  df$data[,2],
-                                # poly_df$x, poly_df$y, mode.checked = FALSE )
-      
-      
       flag <- point.in.polygon( point_cloud$x,  point_cloud$y,
                                  poly_df$x, poly_df$y, mode.checked = FALSE )
       
@@ -214,8 +208,11 @@ server <- shinyServer(function(input, output, session) {
       point_cloud <- point_cloud %>%
         mutate(flag = flag)
 
-      poly.px.x <-append( poly.px.x, list(coords.x[1:(length(coords.x)-1)]*900+image$plot_lim_x[1]))
-      poly.px.y <-append( poly.px.y, list(((coords.y[1:(length(coords.y)-1)])*900)-image$plot_lim_y[1]))
+      # browser()
+      # mean(coords.x[1:(length(coords.x)-1)]*900)
+      # mean( ((coords.y[1:(length(coords.y)-1)])*900)-image$plot_lim_y[1] )
+      poly.px.x <-append( poly.px.x, list(((coords.x[1:(length(coords.x)-1)])*range.plot.x)+image$plot_lim_x[1]*0.97))
+      poly.px.y <-append( poly.px.y, list(((coords.y[1:(length(coords.y)-1)])*range.plot.y)+image$plot_lim_y[1]))
     }
     
     if( coords.type == 'quadrant'){
@@ -479,10 +476,10 @@ get_data <- function( session ){
   }
   
   
-  # df <- ctx %>%
-  #   select(.x, .y)
-  # names(df) <- c(ctx$xAxis[[1]], ctx$yAxis[[1]])
+  # obj <- new("gating_data")
+  # setData(obj, df=df, mode=data_mode)
   
+
   progress$close()
   # remove_modal_spinner()
   

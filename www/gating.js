@@ -575,6 +575,21 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
         
         render_ellipsoid(canvas, globalThis.plist );
       }
+      
+      
+      if(currentMode == 'quadDraw'){
+        // 1,2 y-axis only
+        if( drag_idx == 1 || drag_idx == 2){
+          globalThis.plist[drag_idx].x = coords.x;  
+        }else if( drag_idx == 3 || drag_idx == 4){
+          globalThis.plist[drag_idx].y = coords.y;  
+        } else{
+          globalThis.plist[drag_idx] = coords;  
+        }
+        
+        
+        render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,5) );
+      }
       /* rotationvar radians = (Math.PI / 180) * 0.2;
                                             
                                             if(dy > 0 && startX > cx){
@@ -617,6 +632,14 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
       let poly = {
         'coords': globalThis.plist,
         'type': 'ellipsoid'
+      };
+      Shiny.setInputValue('polygon', poly);
+    }
+    
+    if(currentMode == 'quadDraw'){
+      let poly = {
+        'coords': globalThis.plist,
+        'type': 'quadrant'
       };
       Shiny.setInputValue('polygon', poly);
     }

@@ -14,7 +14,7 @@ library(shinybusy)
 
 library(base64enc)
 library(Rcpp) 
-sourceCpp("points_in_ellipsis.cpp")
+sourceCpp("polygon_test.cpp")
 
 
 
@@ -227,18 +227,19 @@ server <- shinyServer(function(input, output, session) {
       #   },
       #   point_cloud$x, point_cloud$y)
       # tf <- Sys.time()
-
-      # tf-t0
-      # tff-t00
-      # browser()
-
-      
     }
     
     if( coords.type == 'poly'){
-      flag <- point.in.polygon( point_cloud$x,  point_cloud$y,
-                                 poly_df$x, poly_df$y, mode.checked = FALSE )
+      # t0 <- Sys.time()
+      # flag <- point.in.polygon( point_cloud$x,  point_cloud$y,
+      #                            poly_df$x, poly_df$y, mode.checked = FALSE )
+      # tf <- Sys.time()
+      # 
+
+      flag<-points_in_polygon( point_cloud$x,  point_cloud$y,
+                                poly_df$x, poly_df$y)
       
+
       flag[flag>0] <- 1
 
       point_cloud <- point_cloud %>%
@@ -260,8 +261,10 @@ server <- shinyServer(function(input, output, session) {
       
   
       
-      flag.top.left <- point.in.polygon( point_cloud$x, point_cloud$y,
-                                         poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+      flag.top.left <- points_in_polygon( point_cloud$x,  point_cloud$y,
+                                          poly.quadrant$x, poly.quadrant$y)
+        # point.in.polygon( point_cloud$x, point_cloud$y,
+        #                                  poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
       
       
       
@@ -272,8 +275,8 @@ server <- shinyServer(function(input, output, session) {
       
 
       # 
-      flag.top.right <- point.in.polygon( point_cloud$x, point_cloud$y,
-                                          poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+      flag.top.right <- points_in_polygon( point_cloud$x,  point_cloud$y,
+                                           poly.quadrant$x, poly.quadrant$y)
       
       
       quad <- create_quadrant(  poly_df, c(6,1), c(4,3), coords.x, coords.y, range.plot.x, range.plot.y, image$plot_lim_x, image$plot_lim_y  )
@@ -282,8 +285,8 @@ server <- shinyServer(function(input, output, session) {
       poly.px.y <-append( poly.px.y, list(quad[[3]]))
 
       
-      flag.bottom.left <- point.in.polygon( point_cloud$x, point_cloud$y,
-                                            poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+      flag.bottom.left <- points_in_polygon( point_cloud$x,  point_cloud$y,
+                                             poly.quadrant$x, poly.quadrant$y)
       
       
       quad <- create_quadrant(  poly_df, c(1,5), c(4,3), coords.x, coords.y, range.plot.x, range.plot.y, image$plot_lim_x, image$plot_lim_y  )
@@ -293,8 +296,8 @@ server <- shinyServer(function(input, output, session) {
       
 
       
-      flag.bottom.right <- point.in.polygon( point_cloud$x, point_cloud$y,
-                                             poly.quadrant$x, poly.quadrant$y, mode.checked = FALSE )
+      flag.bottom.right <- points_in_polygon( point_cloud$x,  point_cloud$y,
+                                              poly.quadrant$x, poly.quadrant$y)
       
       # browser()
       flag.top.left[flag.top.left >= 1] <- 1

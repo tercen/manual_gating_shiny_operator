@@ -1,6 +1,5 @@
 library(ggplot2)
 library("scattermore")
-library(sp)
 library(grid)
 library('png')
 

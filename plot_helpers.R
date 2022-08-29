@@ -147,20 +147,22 @@ create_plot_1d <- function( data, trans ){
 
 
 
+
+
 create_plot_2d <- function( data, trans  ){
   lab_names <- names(data)
-  
-  if( trans == 'linear'){  
+
+  if( trans == 'linear'){
     x <- densCols(unlist(data[,1]), unlist(data[,2]), colramp=colorRampPalette(c("black", "white")),
                   nbin=256)
     dens <- col2rgb(x)[1,] + 1L
-    
+
     colors <- cols[dens]
-    
-    
+
+
     xlim <- c(min(data[,1]), max(data[,1]*1.1))
     ylim <- c(min(data[,2]), max(data[,2]*1.1))
-    
+
     if( xlim[2] < 1.5e5){
       xticks <- seq( xlim[1], xlim[2], by=1e4 )
       fac<-3
@@ -168,8 +170,8 @@ create_plot_2d <- function( data, trans  ){
       xticks <- seq( xlim[1], xlim[2], by=5e4 )
       fac<-4
     }
-    
-    
+
+
     if( ylim[2] < 1.5e5){
       yticks <- seq( ylim[1], ylim[2], by=1e4 )
       fac<-3
@@ -177,26 +179,26 @@ create_plot_2d <- function( data, trans  ){
       yticks <- seq( ylim[1], ylim[2], by=5e4 )
       fac<-4
     }
-    
-    
+
+
     xtick_labels <- unlist(lapply(xticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
     ytick_labels <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
-    
+
     xticks <- unlist(lapply( xticks, function(x) nearest_factor10(x, FALSE, fac)))
     yticks <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = FALSE, factor=fac)))
-    
+
     imgfile <-  paste0(tempfile(), '.png') # '/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
     p <- ggplot() +
       geom_scattermost(
         as.matrix(data),
         pointsize=2,
-        col=colors, 
+        col=colors,
         pixels=c(900,900)) +
       labs(x=lab_names[1], y=lab_names[2])  +
-      scale_y_continuous(breaks = yticks, 
+      scale_y_continuous(breaks = yticks,
                          expand=c(0,0),
                          labels = ytick_labels) +
-      scale_x_continuous(breaks = xticks, 
+      scale_x_continuous(breaks = xticks,
                          expand=c(0,0),
                          labels = xtick_labels) +
       theme(panel.background = element_rect(fill = 'white', colour = 'white'),
@@ -205,57 +207,79 @@ create_plot_2d <- function( data, trans  ){
             panel.grid = element_line(color = "#AAAAAA",
                                       size = 0.1,
                                       linetype = 2),
-            text = element_text(size=8)) + 
+            text = element_text(size=8)) +
       annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = -Inf, xend = Inf, size = 1) +
       annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
-    
-    
+
+
     # browser()
     pb <- ggplot_build(p)
     # range_x <- pb$layout$panel_params[[1]]$x.range
     # range_y <- pb$layout$panel_params[[1]]$y.range
     range_x <- pb$layout$panel_params[[1]]$x.sec$get_limits()
     range_y <- pb$layout$panel_params[[1]]$y.sec$get_limits()
-    
+
     breaks_x <- append(append( range_x[1], pb$layout$panel_params[[1]]$x.sec$break_info$major_source_user ), range_x[2])
     breaks_x.rel <-append(append(0, pb$layout$panel_params[[1]]$x.sec$break_info$major), 1)
-    
+
     breaks_y <- append(append( range_y[1], pb$layout$panel_params[[1]]$y.sec$break_info$major_source_user ), range_y[2])
     breaks_y.rel <-append(append(0, pb$layout$panel_params[[1]]$y.sec$break_info$major), 1)
+    
+    # # Pre-compute density lines in case the user wants to use this method
+    # 
+    # res<-contourLines(data[,1], data[,2])
+    # 
+    # m <- ggplot(b_data, aes(x = .x, y = .y)) +
+    #   geom_density_2d_filled()
+    # 
+    # 
+    # pbl <- ggplot_build(m)
+    # contour_data <- pbl$data[[1]]
+    # subgroup_idx <- as.numeric(rownames(unique(contour_data["group"])))
+    # 
+    # x_contour <- unname(unlist(contour_data["x"]))
+    # y_contour <- unname(unlist(contour_data["y"]))
+    # 
+    # x_contour[1]
+    # y_contour[1]
+    # # NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
+    # 
+    # xt <- (((x_contour[1] - range_x[1]) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
+    
   }
-  
+
   if( trans %in% c('biexp','logicle')){
     t_data <- data
     colnames(t_data)    <- c('.x','.y')
-    
+
     if( trans == 'biexp'){
-      trans_name <- 'biexponential'  
-      custom_scale <- create_custom_biexp_scale(pos_decades = 5, 
-                                                neg_decades = -1.5, 
+      trans_name <- 'biexponential'
+      custom_scale <- create_custom_biexp_scale(pos_decades = 5,
+                                                neg_decades = -1.5,
                                                 width_basis = -13)
     }else{
-      trans_name <- 'logicle'  
+      trans_name <- 'logicle'
       custom_scale <- create_custom_logicle_scale()
-      
+
     }
-    
+
     b_data <- transform_xy( t_data, custom_scale)
     rd.x <- max(b_data$.x)-min(b_data$.x)
     rd.y <- max(b_data$.y)-min(b_data$.y)
     breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd.x/5 )
     breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd.y/5 )
-    
+
     # Density
     x <- densCols(unlist(b_data[,1]), unlist(b_data[,2]), colramp=colorRampPalette(c("black", "white")),
                   nbin=256 )
     dens <- col2rgb(x)[1,] + 1L
     colors <- cols[dens]
-    
-    breaks.x <-  break_transform(breaks = breaks.x, 
+
+    breaks.x <-  break_transform(breaks = breaks.x,
                                  transformation = trans_name)
-    breaks.y <-  break_transform(breaks = breaks.y, 
+    breaks.y <-  break_transform(breaks = breaks.y,
                                  transformation = trans_name)
-    
+
     imgfile <-  paste0(tempfile(), '.png')
     # browser()
     p <- ggplot() +
@@ -285,33 +309,26 @@ create_plot_2d <- function( data, trans  ){
             axis.ticks.x.top = element_blank(),
             axis.title.x.top = element_blank(),
             axis.ticks.y.right = element_blank(),
-            axis.title.y.right = element_blank()) 
-    
+            axis.title.y.right = element_blank())
+
     p<- set_biexp_ticks(p, breaks.x)
-    # browser()
-    
+
+  
     pb <- ggplot_build(p)
-    
-    # ad <- data.frame(.x = pb$layout$panel_params[[1]]$x.range,
-    #                  .y = pb$layout$panel_params[[1]]$y.range)
-    # br <- transform_xy( ad, custom_scale, df_range = b_data)
-    # 
-    # range_x <- br$.x
-    # range_y <- br$.y
-    # browser()
+  
     range_x <- pb$layout$panel_params[[1]]$x.sec$get_limits()
     range_y <- pb$layout$panel_params[[1]]$y.sec$get_limits()
-    
+
     breaks_x <- append(append( range_x[1], pb$layout$panel_params[[1]]$x.sec$break_info$major_source_user ), range_x[2])
     breaks_x.rel <-append(append(0, pb$layout$panel_params[[1]]$x.sec$break_info$major), 1)
-    
+
     breaks_y <- append(append( range_y[1], pb$layout$panel_params[[1]]$y.sec$break_info$major_source_user ), range_y[2])
     breaks_y.rel <-append(append(0, pb$layout$panel_params[[1]]$y.sec$break_info$major), 1)
   }
-  
-  ggsave(imgfile, units='in', width=3, height=3, p ) 
-  
-  
+
+  ggsave(imgfile, units='in', width=3, height=3, p )
+
+
   lims <- get_axis_plot_lims(imgfile)
   return(list(imgfile, range_x, range_y, lims[[1]], lims[[2]], breaks_x, breaks_x.rel, breaks_y, breaks_y.rel ))
 }

@@ -6,7 +6,42 @@ var currentMode  = 'none';
 var isPolygonClosed = false;
 var current_draw = 0;
 var axis_bounds = [-1, -1, -1, -1];
+var is_dragging = false;
+var drag_idx = -1;
 
+
+function add_poly_dot(ctx, coord){
+  ctx.beginPath();
+  ctx.fillStyle = rgbToHex(0, 0, 0);
+  ctx.arc(coord.x, coord.y, 5, 0, Math.PI * 2, true);
+  ctx.closePath();
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.fillStyle = rgbToHex(255, 255, 255);
+  ctx.arc(coord.x, coord.y, 3, 0, Math.PI * 2, true);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function add_poly_line(ctx, coord_from, coord_to){
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = rgbToHex(0, 0, 0);
+  
+  ctx.moveTo(coord_from.x, coord_from.y);
+  ctx.lineTo(coord_to.x, coord_to.y);
+  ctx.stroke();
+  
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = rgbToHex(255, 255, 255);
+  
+  ctx.moveTo(coord_from.x, coord_from.y);
+  ctx.lineTo(coord_to.x, coord_to.y);
+  ctx.stroke();
+  
+  ctx.restore();
+}
 
 function render(canvas, points) {
       let ctx = canvas.getContext('2d');
@@ -14,24 +49,66 @@ function render(canvas, points) {
       ctx.drawImage(channel_image,0,0)
       ctx.save();
       
-      ctx.lineWidth = 3;
       for (let i = 0; i < points.length; i++) {
-        ctx.beginPath();
-        ctx.fillStyle = rgbToHex(0, 200, 0);
-        ctx.arc(points[i].x, points[i].y, 3, 0, Math.PI * 2, true);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.strokeStyle = rgbToHex(0, 200, 0);
-        ctx.stroke();
-
         if( i >= 1){
-            ctx.moveTo(points[i-1].x, points[i-1].y);
-            ctx.lineTo(points[i].x, points[i].y);
-            ctx.stroke();
+            add_poly_line(ctx, points[i-1], points[i]);
         }
+      }
+      for (let i = 0; i < points.length; i++) {
+        add_poly_dot(ctx, points[i]);
+        
+//        ctx.strokeStyle = rgbToHex(0, 200, 0);
+//        ctx.stroke();
+
+        
         
       }
+      ctx.restore();
+} // END OF render
+
+function render_ellipsoid(canvas, points) {
+      let ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(channel_image,0,0)
+      ctx.save();
+      
+      let center = points[0];
+      let radiusX = Math.sqrt( Math.pow((points[2].y - points[0].y),2) + Math.pow((points[2].x - points[0].x),2) ) ;
+      let radiusY = Math.sqrt( Math.pow((points[1].y - points[0].y),2) + Math.pow((points[1].x - points[0].x),2) ) ;
+      
+      //  Math.sqrt( Math.pow((points[2].y - points[0].y),2) + Math.pow((points[2].x - points[0].x),2) ) ;
+      let dy = points[2].y - points[0].y;
+      let dx = points[2].x - points[0].x;
+      let rotation = Math.atan2(dy, dx); // range (-PI, PI]
+
+
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = rgbToHex(0, 0, 0);
+      ctx.ellipse(center.x, center.y, radiusX, radiusY, rotation, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = rgbToHex(255, 255, 255);
+      ctx.ellipse(center.x, center.y, radiusX, radiusY, rotation, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      
+      // Center dot
+      add_poly_dot(ctx, center);
+
+      
+      
+      ctx.lineWidth = 3;
+      for (let i = 1; i <= 2; i++) {
+        add_poly_dot(ctx, points[i]);
+        //ctx.beginPath();
+        //ctx.fillStyle = rgbToHex(255, 255, 255);
+        //ctx.arc(points[i].x, points[i].y, 3, 0, Math.PI * 2, true);
+        //ctx.closePath();
+        //ctx.fill();
+      }
+      
+      
       ctx.restore();
 } // END OF render
 
@@ -42,33 +119,16 @@ function render_quadrant(canvas, center, bounds) {
       ctx.drawImage(channel_image,0,0)
       ctx.save();
       
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.fillStyle = rgbToHex(0, 200, 0);
-      ctx.arc(center.x, center.y, 3, 0, Math.PI * 2, true);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.strokeStyle = rgbToHex(0, 200, 0);
-      ctx.stroke();
-      
+      for (let i = 0; i < bounds.length; i++) {
+        add_poly_line(ctx, bounds[i], center);
+      }
 
       for (let i = 0; i < bounds.length; i++) {
-        ctx.beginPath();
-        ctx.fillStyle = rgbToHex(0, 200, 0);
-        ctx.arc(bounds[i], bounds[i].y, 3, 0, Math.PI * 2, true);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.strokeStyle = rgbToHex(0, 200, 0);
-        ctx.stroke();
-
-        ctx.moveTo(bounds[i].x, bounds[i].y);
-        ctx.lineTo(center.x, center.y);
-        ctx.stroke();
-
-        
+        add_poly_dot( ctx, bounds[i] );  
       }
+      
+      add_poly_dot( ctx, center );
+      
       ctx.restore();
 } // END OF render_quadrant
 
@@ -101,10 +161,12 @@ $(document).on('shiny:value', function(event) {
 
 $(document).on('shiny:sessioninitialized', function(event) {
   Shiny.setInputValue('pageLoaded', Math.random());
+  
 });
 
 $(document).on('shiny:connected', function(event) {
   Shiny.setInputValue('connected', Math.random());
+  
 });
 
 function save_gate(){
@@ -159,6 +221,10 @@ function select_button(objId){
       currentMode = 'quadDraw';
     }
     
+    if( objId == 'circDrawBtn'){
+      currentMode = 'circDraw';
+    }
+    
     if( objId == 'lineDrawBtn'){
       currentMode = 'lineDraw';
     }
@@ -188,6 +254,7 @@ function hide_all_btn(){
   document.getElementById('eraseBtn').style = 'visibility:hidden';
   document.getElementById('polyDrawBtn').style = 'visibility:hidden';
   document.getElementById('quadDrawBtn').style = 'visibility:hidden';
+  document.getElementById('circDrawBtn').style = 'visibility:hidden';
   document.getElementById('linearBtn').style = 'visibility:hidden';
   document.getElementById('biexpBtn').style = 'visibility:hidden';
   document.getElementById('logBtn').style = 'visibility:hidden';
@@ -204,6 +271,7 @@ Shiny.addCustomMessageHandler('set_data_mode', function(data_mode){
   if(data_mode == '1d'){
     document.getElementById('polyDrawBtn').style = 'visibility:hidden; display:none';
     document.getElementById('quadDrawBtn').style = 'visibility:hidden; display:none';
+    document.getElementById('circDrawBtn').style = 'visibility:hidden; display:none';
     document.getElementById('lineDrawBtn').style = 'visibility:visible; display:inline';
   }
 })
@@ -234,6 +302,10 @@ Shiny.addCustomMessageHandler('flag_info', function(flag_info){
   
   if(currentMode == 'lineDraw'){
     render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,3) );
+  }
+  
+  if(currentMode == 'circDraw'){
+    render_ellipsoid(canvas, globalThis.plist );
   }
   
 
@@ -306,8 +378,23 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
     evt.preventDefault();
     var coords = processEvent(evt);
     
+    is_dragging = false;
+    drag_idx = -1;
+    
+    for (let i = 0; i < globalThis.plist.length; i++) {
+      let dist = Math.sqrt(Math.pow(coords.x - globalThis.plist[i].x,2) + Math.pow(coords.y - globalThis.plist[i].y,2) );
+      let is_closing_poly = currentMode == 'polyDraw' && i == 0;
+      if( dist < 10 && !is_closing_poly){
+        is_dragging = true;
+        drag_idx = i;
+        break;
+      }
+    }
+    
+            
+  
 
-    if( isPolygonClosed == false ){
+    if( isPolygonClosed == false && is_dragging ==  false){ // Add new points
       if(currentMode == 'polyDraw'){
         if( globalThis.plist != '' && globalThis.plist.length > 1){
             let first_pt = globalThis.plist[0];
@@ -316,7 +403,6 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
             if( dist < 10 ){
               coords.x = first_pt.x;
               coords.y = first_pt.y;
-              
               globalThis.plist.push(coords);
               /*
               ,
@@ -337,9 +423,9 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
             }
           }else{
             globalThis.plist.push(coords);
-          } // END of polygon drawing
+          } 
           render(canvas, globalThis.plist);
-        } // END of quadrant drawing
+        } // END of polygon drawing 
         
         // QUADRANT DRAWING
         if(currentMode == 'quadDraw'){
@@ -375,7 +461,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
           
           
           render_quadrant(canvas, coords, globalThis.plist.slice(1,5) );
-        }
+        } // END of quadrant drawing
         
         if(currentMode == 'lineDraw'){
           globalThis.plist = new Array();
@@ -402,14 +488,145 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
           
           
           render_quadrant(canvas, coords, globalThis.plist.slice(1,3) );
-        }
+        } // END if lineDraw
+        
+        if(currentMode == 'circDraw'){
+          isPolygonClosed = true;
+          globalThis.plist = new Array();
+          globalThis.plist.push(coords);
+          
+          let canvas = document.getElementById('gate_canvas');
+          
+
+          globalThis.plist.push( 
+            {x: coords.x, y: coords.y - (canvas.height*0.05)}
+          );
+            
+          globalThis.plist.push( 
+            {x: coords.x + (canvas.width*0.075), y: coords.y}
+          );
+            
+          let poly = {
+            'coords': globalThis.plist,
+            'type': 'ellipsoid'
+          };
+              
+          Shiny.setInputValue('polygon', poly);
+
+          render_ellipsoid(canvas, globalThis.plist );
+        } // END if circDraw
       
     }
     
   }
   
+  function onDrag(evt){
+    if( is_dragging == true ){
+      var coords = processEvent(evt);
+      if(currentMode == 'polyDraw'){
+        if( drag_idx == globalThis.plist.length-1){
+          // Move first and last
+          globalThis.plist[0] = coords;
+        }
+        globalThis.plist[drag_idx] = coords;
+        render(canvas, globalThis.plist);
+      }
+      if(currentMode == 'circDraw'){
+        if(drag_idx == 0){
+          // Center point, drag the full polygon
+          let old_center = globalThis.plist[0];
+          let dx = coords.x - old_center.x;
+          let dy = coords.y - old_center.y;
+          
+          globalThis.plist[drag_idx] = coords;
+          globalThis.plist[1].x += dx;
+          globalThis.plist[1].y += dy;
+          globalThis.plist[2].x += dx;
+          globalThis.plist[2].y += dy;
+        }else {
+          let dy =  globalThis.plist[drag_idx].y - globalThis.plist[0].y;
+          let dx =  globalThis.plist[drag_idx].x - globalThis.plist[0].x;
+          let old_rotation = Math.atan2(dy, dx); // range (-PI, PI]
+          
+          dy =  coords.y - globalThis.plist[0].y;
+          dx =  coords.x - globalThis.plist[0].x;
+          let new_rotation = Math.atan2(dy, dx); // range (-PI, PI]
+          
+          let rotation = (old_rotation - new_rotation)/1;
+          let cos = Math.cos(rotation);
+          let sin = Math.sin(rotation);
+          
+          let cx = globalThis.plist[0].x;   
+          let cy = globalThis.plist[0].y;   
+          if(drag_idx == 1){
+            let el = globalThis.plist[2];
+        
+            globalThis.plist[2].x = (cos * (el.x - cx)) + (sin * (el.y - cy)) + cx;
+            globalThis.plist[2].y = (cos * (el.y - cy)) - (sin * (el.x - cx)) + cy;
+          }else{
+            let el = globalThis.plist[1];
+            globalThis.plist[1].x = (cos * (el.x - cx)) + (sin * (el.y - cy)) + cx;
+            globalThis.plist[1].y = (cos * (el.y - cy)) - (sin * (el.x - cx)) + cy;
+          }
+          
+          globalThis.plist[drag_idx] = coords;
+
+        }
+        
+        render_ellipsoid(canvas, globalThis.plist );
+      }
+      /* rotationvar radians = (Math.PI / 180) * 0.2;
+                                            
+                                            if(dy > 0 && startX > cx){
+                                              radians *= -1;
+                                            }
+                                            
+                                            if(dy < 0 && startX < cx){
+                                              radians *= -1;
+                                            }
+                   
+                                            var cos = Math.cos(radians);
+                                            var sin = Math.sin(radians);
+                                            
+                                            
+                                            
+                                            globalThis.grid.forEach(el => {
+                                                el.x = (cos * (el.x - cx)) + (sin * (el.y - cy)) + cx;
+                                                el.y = (cos * (el.y - cy)) - (sin * (el.x - cx)) + cy;
+                                            })
+      */
+      
+    }
+    
+    
+  }
+  
+  function onUp(evt) {
+    is_dragging = false;
+    if(currentMode == 'polyDraw' && isPolygonClosed == true){
+      let poly = {
+        'coords': globalThis.plist,
+        'type': 'poly'
+      };
+      
+      
+      Shiny.setInputValue('polygon', poly);
+    }
+    
+    if(currentMode == 'circDraw'){
+      let poly = {
+        'coords': globalThis.plist,
+        'type': 'ellipsoid'
+      };
+      Shiny.setInputValue('polygon', poly);
+    }
+  }
+  
+  
   canvas.ontouchstart = onDown;
   canvas.onmousedown = onDown;
+  canvas.onmouseup = onUp;
+  canvas.onmousemove = onDrag;
   //render(canvas, globalThis.plist);
   Shiny.setInputValue('remove_spinner', Math.random());
   

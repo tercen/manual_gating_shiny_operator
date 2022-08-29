@@ -1,6 +1,6 @@
 {
   "name": "Manual Gating",
-  "description": "Template to create a Shiny operator in Tercen.",
+  "description": "Shiny APP used to draw gates manually on FCS data.",
   "tags": ["Cytometry", "Gating"],
   "authors": ["tercen", "thiago"],
   "urls": ["https://github.com/tercen/manual_gating_shiny_operator"],

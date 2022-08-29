@@ -16,14 +16,12 @@
 #### To 0.2.5
 * Fix biexponential ticks in 1d
 * Overall plot consistency
-* Placement of cell selection percentage
+* ~~ Placement of cell selection percentage ~~
 
 #### Unscheduled
 * Create an update mode (read polygon info and update it)
-* Semi-automatic gating
 * Spider gating
 * Ellipsoid gating
-* Density-based gating
 
 
 

@@ -62,6 +62,10 @@ shinyUI(
                               <img width="24" height="24" src="quadrant_draw.png" onClick=select_button("quadDrawBtn");></img>
                             </button>'), class="toolbar-el", align='left')),
                          
+                         fluidRow(column(1, HTML('<button type="button" id="circDrawBtn" class="btn-tool" title="Ellipsoid drawing mode">
+                              <img width="24" height="24" src="ellipsoid_gate.png" onClick=select_button("circDrawBtn");></img>
+                            </button>'), class="toolbar-el", align='left')),
+                         
                          fluidRow(column(1, HTML('<button type="button" id="lineDrawBtn" class="btn-tool" title="Line drawing mode"
                               style="visibility:hidden; display:none">
                               <img width="24" height="24" src="1d_draw.png" onClick=select_button("lineDrawBtn");></img>

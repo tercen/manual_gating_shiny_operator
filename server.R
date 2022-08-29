@@ -6,12 +6,6 @@ library(dplyr)
 library(tidyr)
 
 
-library(ggplot2)
-library("scattermore")
-library(sp)
-library(grid)
-library('png')
-
 library(flowCore)
 library(flowWorkspace)
 
@@ -19,6 +13,9 @@ library(jsonlite)
 library(shinybusy)
 
 library(base64enc)
+library(Rcpp) 
+sourceCpp("points_in_ellipsis.cpp")
+
 
 
 # CD4/CD8
@@ -38,12 +35,12 @@ library(base64enc)
 # options("tercen.stepId"= "a3580d65-a077-4864-ace5-27716cc2dc55")
 
 
+
 source('plot_helpers.R')
-# source('gating_data_class.R')
 
 server <- shinyServer(function(input, output, session) {
   
-  df        <- reactiveValues( data=NULL, flag=NULL  )
+  df        <- reactiveValues( data=NULL, flag=NULL, data_obj=NULL  )
   selected <- reactiveValues( pct=NULL, x=NULL, y=NULL , flag=NULL   )
   image <- reactiveValues( loaded=NULL, 
                            range_x=NULL, 
@@ -72,7 +69,7 @@ server <- shinyServer(function(input, output, session) {
       plot_mode$type <- tmp[[2]]
       
       
-      # lab_names <- names(df$data)
+      lab_names <- names(df$data)
       
       if( plot_mode$type  == '2d' ){
         res <- create_plot_2d(df$data, plot_mode$trans)
@@ -192,12 +189,51 @@ server <- shinyServer(function(input, output, session) {
     poly_df <- data.frame("x"=coords.poly.x,
                           "y"=coords.poly.y )
     # # NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
-
     names(point_cloud) <- c('x', 'y')
     
     
     poly.px.x <- c()
     poly.px.y <- c()
+    
+    
+    if( coords.type == 'ellipsoid'){
+      
+      ce.x <- poly_df$x[1]
+      ce.y <- poly_df$y[1]
+      #Math.sqrt( Math.pow((points[2].y - points[0].y),2) + Math.pow((points[2].x - points[0].x),2) ) ;
+      rx2 <- ( (poly_df$y[3]-ce.y)^2 + (poly_df$x[3]-ce.x)^2 )
+      ry2 <- ( (poly_df$y[2]-ce.y)^2 + (poly_df$x[2]-ce.x)^2 )
+      
+      
+      
+      
+      flag<-points_in_ellipsis(point_cloud$x, point_cloud$y,
+                         ce.x, ce.y,
+                         rx2, ry2)
+      
+      point_cloud <- point_cloud %>%
+        mutate(flag = flag)  
+      
+      
+      poly.px.x <-append( poly.px.x, list(((coords.x[1])*range.plot.x)+image$plot_lim_x[1]*0.97))
+      poly.px.y <-append( poly.px.y, list(((coords.y[1])*range.plot.y)+image$plot_lim_y[1]))
+      # t0 <- Sys.time()
+      # flag <- mapply( function(x, y){
+      #     if( ((x - ce.x )^2 / rx2) + ((y - ce.y )^2 / ry2) <= 1) {
+      #       1
+      #     }else{
+      #       0
+      #     }
+      #   },
+      #   point_cloud$x, point_cloud$y)
+      # tf <- Sys.time()
+
+      # tf-t0
+      # tff-t00
+      # browser()
+
+      
+    }
     
     if( coords.type == 'poly'){
       flag <- point.in.polygon( point_cloud$x,  point_cloud$y,
@@ -341,10 +377,7 @@ server <- shinyServer(function(input, output, session) {
     remove_modal_spinner()
   })
   
-  session$onFlushed(function() {
-    # session$sendCustomMessage("image_loaded", "Image has been loaded")
-  })
-  
+
   observeEvent( input$clearBtn, {
     session$sendCustomMessage("clear_poly", "Clear polygon")
   })
@@ -474,10 +507,6 @@ get_data <- function( session ){
     
     names(df) <- c(chnames[1], "rowId")
   }
-  
-  
-  # obj <- new("gating_data")
-  # setData(obj, df=df, mode=data_mode)
   
 
   progress$close()

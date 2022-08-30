@@ -14,7 +14,7 @@ library(shinybusy)
 
 library(base64enc)
 library(Rcpp) 
-sourceCpp("polygon_test.cpp")
+
 
 
 
@@ -35,8 +35,8 @@ sourceCpp("polygon_test.cpp")
 # options("tercen.stepId"= "a3580d65-a077-4864-ace5-27716cc2dc55")
 
 
-
 source('plot_helpers.R')
+sourceCpp("polygon_test.cpp")
 
 server <- shinyServer(function(input, output, session) {
   
@@ -112,7 +112,8 @@ server <- shinyServer(function(input, output, session) {
     list(src = imgfile,
          id = "channel_image",
          contentType = 'image/png',
-         alt = "Scatter plot failed to load.")
+         alt = "Scatter plot failed to load.",
+         width = "100%", height = "450")
   }, deleteFile = FALSE)
   
   

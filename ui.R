@@ -6,8 +6,8 @@ library(shinycssloaders)
 library(shinybusy)
 
 shinyUI(
-  
-  fillPage(
+  fixedPage(
+  # fillPage(
     shinyjs::useShinyjs(),
 
     tags$head(HTML("<script type='text/javascript' src='gating.js'></script>")),
@@ -19,98 +19,108 @@ shinyUI(
                 }
                   
                 .btn-tool {
-                    background-color:#b7e0ed;
+                    background-color:#eff5ffff;
                     border-style:none;
-                    margin: 5px 5px 1px 5px;
+                    margin: 0px 0px 0px 5px;
                     padding: 0px;
                 }
                 
 
                 .btn-tool:hover {
-                    background-color:#9ce6ff;
+                    background-color:#dae8ffff;
                     border-style:none;
                 }
                 
 
                 .btn-active {
-                    background-color:#b7e0ed;
-                    border-style:solid;
-                    border-color:#d9f573;
-                    margin: 4px 4px 0px 4px;
+                    background-color:#d9e7feff;
+                    border-style:none;
+                    margin: 0px 0px 0px 5px;
                     padding: 0px;
                 }
                 
                 .btn-active:hover {
-                    background-color:#bed177;
-                    border-style:solid;
-                    border-color:#d9f573;
+                    background-color:#dae8ffff;
+                    border-style:none;
                 }
                 
+                .btn-icon{
+                  height: 28px;
+                  width: 28px;
+                  margin-top: 5px;
+                  vertical-align: middle;
+                  display: block;
+                }
+                .toolbar{
+                  position:absolute; 
+                  left: 0px; 
+                  height:40px; 
+                  line-height:40px;
+                  background-color: #eff5ffff
+                }
                 
-                .span4 { max-width: 24px; }
-                .well { max-width: 24px; }
+                .separator{
+                  display:inline-block;
+                  color:#dae8ffff; 
+                  font-size:26px; 
+                  height: 28px;
+                  margin-left:0.25em;
+                  margin-right:0.25em;
+                  margin-top: 0em;
+                  padding: 0px;
+                  vertical-align: top;
+                }
                 ' )),
       
-    
-    
-        sidebarLayout(
-          sidebarPanel(  fluidRow(column(1, HTML('<button type="button" id="polyDrawBtn" class="btn-tool" title="Polygon drawing mode">
-                              <img width="24" height="24" src="poly_draw.png" onClick=select_button("polyDrawBtn");></img>
-                            </button>'), class="toolbar-el", align='left')),
-                         
-                         fluidRow(column(1, HTML('<button type="button" id="quadDrawBtn" class="btn-tool" title="Quadrant drawing mode">
-                              <img width="24" height="24" src="quadrant_draw.png" onClick=select_button("quadDrawBtn");></img>
-                            </button>'), class="toolbar-el", align='left')),
-                         
-                         fluidRow(column(1, HTML('<button type="button" id="circDrawBtn" class="btn-tool" title="Ellipsoid drawing mode">
-                              <img width="24" height="24" src="ellipsoid_gate.png" onClick=select_button("circDrawBtn");></img>
-                            </button>'), class="toolbar-el", align='left')),
-                         
-                         fluidRow(column(1, HTML('<button type="button" id="lineDrawBtn" class="btn-tool" title="Line drawing mode"
+    fixedRow(
+      column( 12, 
+              HTML('<button type="button" id="polyDrawBtn" class="btn-tool"  data-group="draw"  title="Polygon drawing mode">
+                              <img class="btn-icon" src="poly_gate.png" onClick=select_button("polyDrawBtn");></img>
+                            </button>'),
+              HTML('<button type="button" id="quadDrawBtn" class="btn-tool" data-group="draw" title="Quadrant drawing mode">
+                              <img class="btn-icon" src="quad_gate.png" onClick=select_button("quadDrawBtn");></img>
+                            </button>'),
+              HTML('<button type="button" id="circDrawBtn" class="btn-tool" data-group="draw" title="Ellipsoid drawing mode">
+                              <img class="btn-icon" src="ellipsoid_gate.png"  onClick=select_button("circDrawBtn");></img>
+                            </button>'),
+              HTML('<button type="button" id="lineDrawBtn" class="btn-tool" data-group="draw" title="Line drawing mode"
                               style="visibility:hidden; display:none">
-                              <img width="24" height="24" src="1d_draw.png" onClick=select_button("lineDrawBtn");></img>
-                            </button>'), class="toolbar-el", align='left' ) ),
-
-                         fluidRow(column(1, HTML('</br>'))),
-                         
-                         fluidRow(column(1, HTML('<button type="button" id="eraseBtn" class="btn-tool" title="Erase polygon">
-                              <img width="24" height="24" src="erase.png" onClick=clear_poly();></img>
-                            </button>'), class="toolbar-el", align='left')),
-                         
-                         fluidRow(column(1, HTML('</br>'))),
-                         
-                         fluidRow(column(1, HTML('<button type="button" id="saveBtn" class="btn-tool" title="Save gate">
-                              <img width="24" height="24" src="save.png" onClick=save_gate();></img>
-                            </button>'), class="toolbar-el", align='left')),
-                         
-                         fluidRow(column(1, HTML('</br>'))),
-                         
-                         fluidRow(column(1, HTML('<button type="button" id="linearBtn" class="btn-tool" title="Linear Transform">
-                              <img width="24" height="24" src="identity.png" onClick=select_transform("linear");></img>
-                            </button>'), class="toolbar-el", align='left')),
-                         
-                         fluidRow(column(1, HTML('<button type="button" id="biexpBtn" class="btn-tool" title="Biexp Transform">
-                              <img width="24" height="24" src="biexp.png" onClick=select_transform("biexp");></img>
-                            </button>'), class="toolbar-el", align='left')),
-                         
-                         fluidRow(column(1, HTML('<button type="button" id="logBtn" class="btn-tool" title="Logicle Transform">
-                              <img width="24" height="24" src="log.png" onClick=select_transform("logicle");></img>
-                            </button>'), class="toolbar-el", align='left')),
-                         width = 1, fluid=FALSE),
-          mainPanel(
-            
-            fluidRow(
-              column(6, 'Manual Gating', id="tool_label", class="toolbar-el", style="font-weight:bold; font-size:36px",
-                     align='center')),
-            tags$canvas(id="gate_canvas", style="background-color: white"),
-            fluidRow( column(8, imageOutput(outputId = "image_div")   ,  
-                             style = "height:5px; visibility:hidden") )
-          ) # END mainPanel
-        )
-    
+                              <img class="btn-icon" src="1d_gate.png" onClick=select_button("lineDrawBtn");></img>
+                            </button>'),
+              HTML('<span class="separator">|</span>'),
+              HTML('<button type="button" id="eraseBtn" class="btn-tool" title="Erase polygon">
+                              <img class="btn-icon" src="eraser_icon.png" onClick=clear_poly();></img>
+                            </button>'),
+              HTML('<button type="button" id="saveBtn" class="btn-tool" title="Save gate">
+                              <img class="btn-icon" src="save_icon.png" onClick=save_gate();></img>
+                            </button>'),
+              HTML('<span class="separator">|</span>'),
+              HTML('<button type="button" id="linearBtn" class="btn-tool" data-group="trans" title="Linear Transform">
+                              <img class="btn-icon" src="identity_icon.png" onClick=select_transform("linearBtn");></img>
+                            </button>'),
+              HTML('<button type="button" id="biexpBtn" class="btn-tool" data-group="trans" title="Biexp Transform">
+                              <img class="btn-icon" src="biexp_icon.png" onClick=select_transform("biexpBtn");></img>
+                            </button>'),
+              HTML('<button type="button" id="logBtn" class="btn-tool" data-group="trans" title="Logicle Transform">
+                              <img class="btn-icon" src="logicle_icon.png" onClick=select_transform("logBtn");></img>
+                            </button>'),
+              class="toolbar",
+              fixedRow(
+                column(8, tags$canvas(id="gate_canvas", style="background-color: white;" ) ),
+                column(2, "Parameter Panel", style=" border-style:solid; position:absolute; left:650px; visibility:hidden;"),
+                column(1, 
+                       imageOutput(outputId = "image_div")   ,  
+                       style = "height:5px; visibility:hidden;")
+                
+              )
+              ) # END column(12) -- top column
+      
+    ) # END fiexdRow
+      
+ 
         
         
-      # )
-  ) # END filPage
+      
+  ) # END fixedPage
 ) # END shinyUI
 

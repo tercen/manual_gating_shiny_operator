@@ -1,7 +1,11 @@
 globalThis.plist = new Array();
 
 
-var currentButton = '';
+var currentButton = new Array();
+var currentGroup = new Array();
+var currentTrans = 'linear';
+
+
 var currentMode  = 'none';
 var isPolygonClosed = false;
 var current_draw = 0;
@@ -160,8 +164,16 @@ $(document).on('shiny:value', function(event) {
 });
 
 $(document).on('shiny:sessioninitialized', function(event) {
+  
   Shiny.setInputValue('pageLoaded', Math.random());
   
+  // Initialize with identity transform selected
+  let btn = document.getElementById("linearBtn");
+  let div = btn.parentElement;
+  let grp = btn.getAttribute("data-group");
+    
+  update_active_button_list("linearBtn", grp);
+  btn.classList.add('btn-active');
 });
 
 $(document).on('shiny:connected', function(event) {
@@ -179,39 +191,88 @@ function save_gate(){
 }
 
 
-function select_transform( t_type){
+function select_transform(btnId){
+  let t_type = "linear";
+  
+  if( btnId === "biexpBtn"){
+    t_type = "biexp";
+  }
+  
+  if( btnId === "logBtn"){
+    t_type = "logicle";
+  }
+  
   globalThis.plist = new Array();
   let tmpBtn = currentButton;
-  select_button("");
+  //select_button(-1);
 
   Shiny.setInputValue('transformSelected', t_type);
 
-  select_button(tmpBtn);
+  //select_button(tmpBtn);
+  select_button(btnId);
   
-  clear_poly();
+  
 }
 
 function select_button(objId){
-  if( currentButton != ''  ){
+  clear_poly();
+  
+  // TODO
+  // Select by group
+  // alert(btn.getAttribute("data-group"));
+  /*if( currentButton.length > 0 ){
     currentMode = 'none';
+    
     let btn = document.getElementById(currentButton);
     let div = btn.parentElement;
-    btn.classList.remove('btn-active');
-    div.classList.remove('btn-active');
+    
+    if( objId != ''){
+      let btn_new = document.getElementById(objId);
+      let grp_new = btn_new.getAttribute("data-group");
+      
+      let grp_old = btn.getAttribute("data-group");
+      
+      
+      
+      if( grp_new === grp_old ){
+        btn.classList.remove('btn-active');
+        div.classList.remove('btn-active');
+      }
+      
+    }
+
 
     currentButton = '';
-  }
+  }*/
   
-  if( objId != ''){
+  if( objId != -1){
     let btn = document.getElementById(objId);
+    //alert( objId + ' - ' + btn);
     let div = btn.parentElement;
+    let grp = btn.getAttribute("data-group");
     
-    div.style = "background-color: #FFFFFF;";
+    if( currentButton.length > 0 ){
+      
+      let oldBtnId = get_active_button_id( grp );
+
+      if( typeof oldBtnId == "string"  ){
+
+        let oldBtn = document.getElementById(oldBtnId);
+        let oldDiv = oldBtn.parentElement;
+
+        oldBtn.classList.remove('btn-active');
+        oldDiv.classList.remove('btn-active');
+      }
+      
+      update_active_button_list(objId, grp);
+
+      btn.classList.add('btn-active');
+    }
     
-  
-    btn.classList.add('btn-active');
+
     
-    currentButton = objId;
+    
+    //currentButton = objId;
     
     if( objId == 'polyDrawBtn'){
       currentMode = 'polyDraw';
@@ -231,7 +292,47 @@ function select_button(objId){
   }
     
 }
+
+function get_active_button_id( btnGrp ){
+  if( currentGroup.length == 0){
+    return -1;
+  }else{
+    for( let i = 0; i < currentGroup.length; i++ ){
+      if( currentGroup[i] === btnGrp ){
+        return currentButton[i];
+      }
+    }
+    
+    return -1;
+  }
+}
+
+function update_active_button_list( btnId, btnGrp ) {
+  //currentButton = [];
+  //currentGroup = [];
   
+  if( currentGroup.length == 0){
+    currentButton.push(btnId);
+    currentGroup.push(btnGrp);
+  }else{
+    let grp_idx = -1;
+    for( let i = 0; i < currentGroup.length; i++ ){
+      if( currentGroup[i] === btnGrp ){
+        grp_idx = i;
+        break;
+      }
+    }
+    if( grp_idx >= 0 ){
+      currentButton[grp_idx] = btnId;
+      currentGroup[grp_idx] = btnGrp;
+    }else{
+      currentButton.push(btnId);
+      currentGroup.push(btnGrp); 
+    }
+    
+  }
+
+}
  
 
 // Client-side handling of clearing the polygon points
@@ -404,13 +505,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
               coords.x = first_pt.x;
               coords.y = first_pt.y;
               globalThis.plist.push(coords);
-              /*
-              ,
-                'bottom': bottom_axis,
-                'top': top_axis,
-                'left': left_axis,
-                'right': right_axis
-              */
+
               let poly = {
                 'coords': globalThis.plist,
                 'type': 'poly'

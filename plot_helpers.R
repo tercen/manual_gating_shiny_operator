@@ -10,14 +10,6 @@ cols <-  colorRampPalette(c("#440154", "#3b528b", "#21918c",
                             "#5ec962", "#fde725"))(256)
 
 create_plot_1d <- function( data, trans ){
-  #TODO
-  
-  # 2. Set labels properly
-  # 3. UI Improve
-  # 4. Set correct buttonsi nthe UI
-  # 5. Create the 1d gating function
-  
-  
   # Create 1d density plot
   xt <- data[,1]
   imgfile <-  paste0(tempfile(), '.png')
@@ -41,11 +33,11 @@ create_plot_1d <- function( data, trans ){
     p <- ggplot( 
       data=data.frame(x=xt),
       mapping=aes(x=x),
-      pointsize=2,
+      pointsize=1.5,
       col=colors,
-      pixels=c(900,900)) +
+      pixels=c(600,600)) +
       labs(x=lab_names[1], y='Density')  +
-      geom_density(fill = '#AAAAAA') +
+      geom_density(fill = '#eff5fffd') +
       scale_x_continuous(breaks = xticks, 
                          labels = xtick_labels,
                          expand=c(0,0)) +
@@ -53,10 +45,7 @@ create_plot_1d <- function( data, trans ){
       theme(panel.background = element_rect(fill = 'white', colour = 'white'),
              axis.line.x=element_line(color="#07070F" ),
              axis.line.y=element_line(color="#07070F" ),
-             panel.grid = element_line(color = "#AAAAAA",
-                                       size = 0.1,
-                                       linetype = 2),
-             text = element_text(size=8)) + 
+             text = element_text(size=6)) + 
       annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = -Inf, xend = Inf, size = 1) +
       annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
     
@@ -90,21 +79,36 @@ create_plot_1d <- function( data, trans ){
     xt <- transform_x( xt, custom_scale)
     
     breaks.x <- seq(min(xt), max(xt), by=rd/5 )
-    breaks.x <-  break_transform(breaks = breaks.x, 
+    breaks.x.t <-  break_transform(breaks = breaks.x, 
                                  transformation = trans_name)
-# browser()
+    
+    # Data range is too narrow to sensibly display at the log scale if there is
+    # 1 or 0 ticks
+    fac <- 5
+    mfac <- max(xt)
+    while( mfac < 5 * 10^fac && fac > 2){ 
+      fac <- fac - 1
+    }
+    fac <- fac - 1
+    
+    labs_x <- unlist(lapply(breaks.x, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
+    if( sum(breaks.x.t >= min(xt) & breaks.x.t <= max(xt)) > 10 ){
+      breaks.x <- breaks.x.t
+      labs_x <- custom_tick_labels(breaks.x)
+    }
+
     xtd <- density(xt)
     p <- ggplot( 
       data=data.frame(x=xt),
       mapping=aes(x=x),
       col=colors,
-      pixels=c(900,900)) +
-      geom_density(fill = '#AAAAAA') +
+      pixels=c(600,600)) +
+      geom_density(fill = '#eff5fffd') +
       labs(x=lab_names[1], y='Density')  +
       scale_x_continuous(limits = c( min(xt), max(xt) ),
                          breaks = breaks.x,
                          # trans = custom_scale,
-                         labels = custom_tick_labels(breaks.x),
+                         labels = labs_x,
                          expand=c(0,0),
                          sec.axis = dup_axis(labels=c())) +
       scale_y_continuous(expand=c(0,0),
@@ -112,10 +116,7 @@ create_plot_1d <- function( data, trans ){
       theme(panel.background = element_rect(fill = 'white', colour = 'white'),
              axis.line.x=element_line(color="#07070F" ),
              axis.line.y=element_line(color="#07070F" ),
-             panel.grid = element_line(color = "#AAAAAA",
-                                       size = 0.1,
-                                       linetype = 2),
-             text = element_text(size=8)) + 
+             text = element_text(size=6)) + 
       annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = -Inf, xend = Inf, size = 1) +
       annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
     
@@ -138,7 +139,7 @@ create_plot_1d <- function( data, trans ){
   }
   
 
-  ggsave(imgfile, units='in', width=3, height=3, p ) 
+  ggsave(imgfile, units='px', width=600, height=600, p )
   lims <- get_axis_plot_lims(imgfile)
   
   return(list(imgfile, range_x, range_y, lims[[1]], lims[[2]], breaks_x, breaks_x.rel, breaks_y, breaks_y.rel ))
@@ -186,13 +187,14 @@ create_plot_2d <- function( data, trans  ){
     xticks <- unlist(lapply( xticks, function(x) nearest_factor10(x, FALSE, fac)))
     yticks <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = FALSE, factor=fac)))
 
-    imgfile <-  paste0(tempfile(), '.png') # '/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
+    # paste0(tempfile(), '.png') #
+    imgfile <-   paste0(tempfile(), '.png') #'/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
     p <- ggplot() +
       geom_scattermost(
         as.matrix(data),
-        pointsize=2,
+        pointsize=1.5,
         col=colors,
-        pixels=c(900,900)) +
+        pixels=c(600,600)) +
       labs(x=lab_names[1], y=lab_names[2])  +
       scale_y_continuous(breaks = yticks,
                          expand=c(0,0),
@@ -203,10 +205,7 @@ create_plot_2d <- function( data, trans  ){
       theme(panel.background = element_rect(fill = 'white', colour = 'white'),
             axis.line.x=element_line(color="#07070F" ),
             axis.line.y=element_line(color="#07070F" ),
-            panel.grid = element_line(color = "#AAAAAA",
-                                      size = 0.1,
-                                      linetype = 2),
-            text = element_text(size=8)) +
+            text = element_text(size=6)) +
       annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = -Inf, xend = Inf, size = 1) +
       annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
 
@@ -274,11 +273,40 @@ create_plot_2d <- function( data, trans  ){
     dens <- col2rgb(x)[1,] + 1L
     colors <- cols[dens]
 
-    breaks.x <-  break_transform(breaks = breaks.x,
+    breaks.x.t <-  break_transform(breaks = breaks.x,
                                  transformation = trans_name)
-    breaks.y <-  break_transform(breaks = breaks.y,
+    breaks.y.t <-  break_transform(breaks = breaks.y,
                                  transformation = trans_name)
 
+    
+    # Data range is too narrow to sensibly display at the log scale if there is
+    # 1 or 0 ticks
+    fac <- 5
+    mfac <- max(b_data$.x)
+    while( mfac < 5 * 10^fac && fac > 2){ 
+      fac <- fac - 1
+    }
+    fac <- fac - 1
+
+    labs_x <- unlist(lapply(breaks.x, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
+    if( sum(breaks.x.t >= min(b_data$.x) & breaks.x.t <= max(b_data$.x)) > 10 ){
+      breaks.x <- breaks.x.t
+      labs_x <- custom_tick_labels(breaks.x)
+    }
+    
+    fac <- 5
+    mfac <- max(b_data$.y)
+    while( mfac < 5 * 10^fac && fac > 2){ 
+      fac <- fac - 1
+    }
+    fac <- fac - 1
+
+    labs_y <- unlist(lapply(breaks.y, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
+    if( sum(breaks.y.t >= min(b_data$.y) & breaks.y.t <= max(b_data$.y)) > 10 ){
+      breaks.y <- breaks.y.t
+      labs_y <- custom_tick_labels(breaks.y)
+    }
+    
     imgfile <-  paste0(tempfile(), '.png')
     # browser()
     p <- ggplot() +
@@ -286,20 +314,20 @@ create_plot_2d <- function( data, trans  ){
                          breaks = breaks.x,
                          expand=c(0,0),
                          # trans = custom_scale,
-                         labels = custom_tick_labels(breaks.x),
+                         labels = labs_x,
                          sec.axis = dup_axis(labels=c())) +
       scale_y_continuous(limits = c( min(b_data$.y), max(b_data$.y) ),
                          breaks = breaks.y,
                          expand=c(0,0),
                          # trans = custom_scale,
-                         labels = custom_tick_labels(breaks.y),
+                         labels = labs_y,
                          sec.axis = dup_axis(labels = c())) +
       geom_scattermore(
         data=b_data,
         mapping=aes(x=.x, y=.y),
-        pointsize=2,
+        pointsize=1.5,
         col=colors,
-        pixels=c(900,900)) +
+        pixels=c(600,600)) +
       labs(x=lab_names[1], y=lab_names[2])  +
       theme(panel.background = element_rect(fill = 'white', colour = 'white'),
             axis.line.x=element_line(color="#07070F" ),
@@ -325,7 +353,7 @@ create_plot_2d <- function( data, trans  ){
     breaks_y.rel <-append(append(0, pb$layout$panel_params[[1]]$y.sec$break_info$major), 1)
   }
 
-  ggsave(imgfile, units='in', width=3, height=3, p )
+  ggsave(imgfile, units='px', width=600, height=600, p )
 
 
   lims <- get_axis_plot_lims(imgfile)
@@ -436,9 +464,9 @@ get_axis_plot_lims <- function( imgfile ){
 #   p <- ggplot() +
 #     geom_scattermost(
 #       as.matrix(data),
-#       pointsize=2,
+#       pointsize=1.5,
 #       col=colors, 
-#       pixels=c(900,900)) +
+#       pixels=c(600,600)) +
 #     labs(x=lab_names[1], y=lab_names[2])  +
 #     scale_y_continuous(breaks = yticks, labels = ytick_labels) +
 #     scale_x_continuous(breaks = xticks, labels = xtick_labels) +
@@ -508,9 +536,9 @@ get_axis_plot_lims <- function( imgfile ){
 #     geom_scattermore(
 #       data=t_data,
 #       mapping=aes(x=.x, y=.y),
-#       pointsize=2,
+#       pointsize=1.5,
 #       col=colors,
-#       pixels=c(900,900)) +
+#       pixels=c(600,600)) +
 #     labs(x=lab_names[1], y=lab_names[2])  +
 #     theme(panel.background = element_rect(fill = 'white', colour = 'white'),
 #           axis.line.x=element_line(color="#07070F" ),

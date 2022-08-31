@@ -43,10 +43,12 @@ library(Rcpp)
 # options("tercen.stepId"= "a3580d65-a077-4864-ace5-27716cc2dc55")
 
 
-source('plot_helpers.R')
-sourceCpp("polygon_test.cpp")
+
 
 server <- shinyServer(function(input, output, session) {
+
+  source('plot_helpers.R')
+  sourceCpp("polygon_test.cpp")
   
   df        <- reactiveValues( data=NULL, flag=NULL, data_obj=NULL  )
   selected <- reactiveValues( pct=NULL, x=NULL, y=NULL , flag=NULL   )
@@ -407,7 +409,7 @@ server <- shinyServer(function(input, output, session) {
     # SAVE this as specific file to be read if needed... 
     
     fout <- paste0( tempfile(), ".png") 
-    raw <- base64enc::base64decode(what = substr(input$save[1], 23, nchar(input$save[1])))
+    raw <- base64enc::base64decode(what = substr(input$save, 23, nchar(input$save)))
     png::writePNG(png::readPNG(raw), fout)    
     
     img_df <- tim::png_to_df(fout, filename = "Gate.png")

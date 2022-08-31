@@ -61,11 +61,6 @@ function render(canvas, points) {
       for (let i = 0; i < points.length; i++) {
         add_poly_dot(ctx, points[i]);
         
-//        ctx.strokeStyle = rgbToHex(0, 200, 0);
-//        ctx.stroke();
-
-        
-        
       }
       ctx.restore();
 } // END OF render
@@ -187,7 +182,7 @@ function save_gate(){
   Shiny.setInputValue('save', [canvas.toDataURL(), Math.random()]); // Ask server to save 
   hide_all_btn();
   
-  document.getElementById('tool_label').innerHTML = "Manual Gating (View Mode)";
+  //document.getElementById('tool_label').innerHTML = "Manual Gating (View Mode)";
 }
 
 
@@ -356,6 +351,7 @@ function hide_all_btn(){
   document.getElementById('polyDrawBtn').style = 'visibility:hidden';
   document.getElementById('quadDrawBtn').style = 'visibility:hidden';
   document.getElementById('circDrawBtn').style = 'visibility:hidden';
+  document.getElementById('lineDrawBtn').style = 'visibility:hidden';
   document.getElementById('linearBtn').style = 'visibility:hidden';
   document.getElementById('biexpBtn').style = 'visibility:hidden';
   document.getElementById('logBtn').style = 'visibility:hidden';

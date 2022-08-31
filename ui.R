@@ -11,6 +11,8 @@ shinyUI(
     shinyjs::useShinyjs(),
 
     tags$head(HTML("<script type='text/javascript' src='gating.js'></script>")),
+    
+    
     tags$style(HTML('
                 .toolbar-el{
                     margin-left:0px; 
@@ -70,18 +72,29 @@ shinyUI(
                   padding: 0px;
                   vertical-align: top;
                 }
+                
+                .div-btnDisable{
+                  background-color:#eff5ffff; 
+                  opacity: 10%; 
+                  display:inline-block; 
+                  height: 32px; 
+                  width: 32px;
+                }
                 ' )),
-      
+    
     fixedRow(
       column( 12, 
               HTML('<button type="button" id="polyDrawBtn" class="btn-tool"  data-group="draw"  title="Polygon drawing mode">
-                              <img class="btn-icon" src="poly_gate.png" onClick=select_button("polyDrawBtn");></img>
+                              <img class="btn-icon" src="poly_gate.png" onClick=select_button("polyDrawBtn"); 
+                                id="polyDrawBtnImg" style="visibility:hidden"></img>
                             </button>'),
               HTML('<button type="button" id="quadDrawBtn" class="btn-tool" data-group="draw" title="Quadrant drawing mode">
-                              <img class="btn-icon" src="quad_gate.png" onClick=select_button("quadDrawBtn");></img>
+                              <img class="btn-icon" src="quad_gate.png" onClick=select_button("quadDrawBtn"); 
+                              id="quadDrawBtnImg" style="visibility:hidden"></img>
                             </button>'),
               HTML('<button type="button" id="circDrawBtn" class="btn-tool" data-group="draw" title="Ellipsoid drawing mode">
-                              <img class="btn-icon" src="ellipsoid_gate.png"  onClick=select_button("circDrawBtn");></img>
+                              <img class="btn-icon" src="ellipsoid_gate.png"  onClick=select_button("circDrawBtn"); 
+                              id="circDrawBtnImg" style="visibility:hidden"></img>
                             </button>'),
               HTML('<button type="button" id="lineDrawBtn" class="btn-tool" data-group="draw" title="Line drawing mode"
                               style="visibility:hidden; display:none">
@@ -89,22 +102,30 @@ shinyUI(
                             </button>'),
               HTML('<span class="separator">|</span>'),
               HTML('<button type="button" id="eraseBtn" class="btn-tool" title="Erase polygon">
-                              <img class="btn-icon" src="eraser_icon.png" onClick=clear_poly();></img>
+                              <img class="btn-icon" src="eraser_icon.png" onClick=clear_poly(); 
+                              id="eraseBtnImg" style="visibility:hidden"></img>
                             </button>'),
-              HTML('<button type="button" id="saveBtn" class="btn-tool" title="Save gate">
-                              <img class="btn-icon" src="save_icon.png" onClick=save_gate();></img>
-                            </button>'),
+              HTML('<div id="saveDisabledDiv" class="div-btnDisable" >
+                            <button type="button" id="saveBtn" class="btn-tool" title="Save gate">
+                              <img class="btn-icon" src="save_icon.png" onClick=save_gate(); 
+                              id="saveBtnImg" style="visibility:hidden;"></img>
+                            </button></div>'),
               HTML('<span class="separator">|</span>'),
               HTML('<button type="button" id="linearBtn" class="btn-tool" data-group="trans" title="Linear Transform">
-                              <img class="btn-icon" src="identity_icon.png" onClick=select_transform("linearBtn");></img>
+                              <img class="btn-icon" src="identity_icon.png" onClick=select_transform("linearBtn");
+                              id="linearBtnImg" style="visibility:hidden"></img>
                             </button>'),
               HTML('<button type="button" id="biexpBtn" class="btn-tool" data-group="trans" title="Biexp Transform">
-                              <img class="btn-icon" src="biexp_icon.png" onClick=select_transform("biexpBtn");></img>
+                              <img class="btn-icon" src="biexp_icon.png" onClick=select_transform("biexpBtn"); 
+                              id="biexpBtnImg" style="visibility:hidden"></img>
                             </button>'),
               HTML('<button type="button" id="logBtn" class="btn-tool" data-group="trans" title="Logicle Transform">
-                              <img class="btn-icon" src="logicle_icon.png" onClick=select_transform("logBtn");></img>
+                              <img class="btn-icon" src="logicle_icon.png" onClick=select_transform("logBtn"); 
+                              id="logBtnImg" style="visibility:hidden"></img>
                             </button>'),
-              class="toolbar",
+              HTML('<img  src="Connecting.gif" style="position: absolute; right: 0px; margin-top: 5px; margin-right: 10px;" 
+                   height="30" width="150" id="connectGif"/>'),
+              class="toolbar", 
               fixedRow(
                 column(8, tags$canvas(id="gate_canvas", style="background-color: white;" ) ),
                 column(2, "Parameter Panel", style=" border-style:solid; position:absolute; left:650px; visibility:hidden;"),

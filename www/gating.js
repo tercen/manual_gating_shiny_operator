@@ -359,15 +359,15 @@ function clear_poly(){
 }
 
 function hide_all_btn(){
-  document.getElementById('saveBtn').style = 'visibility:hidden';
-  document.getElementById('eraseBtn').style = 'visibility:hidden';
-  document.getElementById('polyDrawBtn').style = 'visibility:hidden';
-  document.getElementById('quadDrawBtn').style = 'visibility:hidden';
-  document.getElementById('circDrawBtn').style = 'visibility:hidden';
-  document.getElementById('lineDrawBtn').style = 'visibility:hidden';
-  document.getElementById('linearBtn').style = 'visibility:hidden';
-  document.getElementById('biexpBtn').style = 'visibility:hidden';
-  document.getElementById('logBtn').style = 'visibility:hidden';
+  document.getElementById('saveBtn').style = 'visibility:hidden; display: none;';
+  document.getElementById('eraseBtn').style = 'visibility:hidden; display: none;';
+  document.getElementById('polyDrawBtn').style = 'visibility:hidden; display: none;';
+  document.getElementById('quadDrawBtn').style = 'visibility:hidden; display: none;';
+  document.getElementById('circDrawBtn').style = 'visibility:hidden; display: none;';
+  document.getElementById('lineDrawBtn').style = 'visibility:hidden; display: none;';
+  document.getElementById('linearBtn').style = 'visibility:hidden; display: none;';
+  document.getElementById('biexpBtn').style = 'visibility:hidden; display: none;';
+  document.getElementById('logBtn').style = 'visibility:hidden; display: none;';
 }
 
 Shiny.addCustomMessageHandler('setViewOnly', function(ignore){

@@ -1,10 +1,4 @@
-library(ggplot2)
-library("scattermore")
-library(grid)
-library('png')
 
-library(flowCore)
-library(flowWorkspace)
 
 cols <-  colorRampPalette(c("#440154", "#3b528b", "#21918c", 
                             "#5ec962", "#fde725"))(256)

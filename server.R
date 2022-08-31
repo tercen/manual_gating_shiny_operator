@@ -5,6 +5,14 @@ library(tim)
 library(dplyr)
 library(tidyr)
 
+library(ggplot2)
+library("scattermore")
+library(grid)
+library('png')
+
+library(flowCore)
+library(flowWorkspace)
+
 
 library(flowCore)
 library(flowWorkspace)

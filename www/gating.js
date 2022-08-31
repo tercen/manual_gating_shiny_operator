@@ -178,9 +178,9 @@ $(document).on('shiny:connected', function(event) {
 
 function save_gate(){
  var canvas = document.getElementById('gate_canvas');
- 
-  Shiny.setInputValue('save', [canvas.toDataURL(), Math.random()]); // Ask server to save 
-  hide_all_btn();
+ hide_all_btn();
+ Shiny.setInputValue('save', [canvas.toDataURL(), Math.random()]); // Ask server to save 
+  
   
   //document.getElementById('tool_label').innerHTML = "Manual Gating (View Mode)";
 }

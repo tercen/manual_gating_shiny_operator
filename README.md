@@ -25,6 +25,7 @@
 
 
 #### Known Bugs / Limitations
+* Loading modal dialogue does not start with page load
 * Logicle transform is unstable, crashing on certain data. 
 * Plot parameters are currently fixed.
 * ~~ The operator currently outputs the input mapping. The JoinOperator needs to be fixed, otherwise it tries to add all flag values to each input entry ~~

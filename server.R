@@ -41,10 +41,6 @@ library(Rcpp)
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/a3580d65-a077-4864-ace5-27716cc2dc55
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
 # options("tercen.stepId"= "a3580d65-a077-4864-ace5-27716cc2dc55")
-
-
-
-
 server <- shinyServer(function(input, output, session) {
 
   source('plot_helpers.R')
@@ -406,57 +402,42 @@ server <- shinyServer(function(input, output, session) {
     ctx <- getCtx(session)
     # Check the barplot operator --> Do the result plot
     show_modal_spinner(spin="fading-circle", text = "Saving")
-    # SAVE this as specific file to be read if needed... 
-    
-    fout <- paste0( tempfile(), ".png") 
-    raw <- base64enc::base64decode(what = substr(input$save, 23, nchar(input$save)))
-    png::writePNG(png::readPNG(raw), fout)    
-    
-    img_df <- tim::png_to_df(fout, filename = "Gate.png")
-    
-    
-    
-    wkf<-ctx$client$workflowService$get(ctx$workflowId, ctx$stepId)
-    stp <- Find(function(p) identical(p$id, ctx$stepId), wkf$steps)
-    
-    img_df$mimetype <- 'image/png'
-    img_df$filename <- paste0( stp$name, '_Gate') 
-    
-    
-    img_df <- img_df %>%
-      ctx$addNamespace() %>%
-      as_relation() #%>%
-    #as_join_operator(list(), list()) 
-    
-    ctx <- getCtx(session)
-    
-    
-    labs <- unname(as.list(ctx$rselect()))[[1]]
-    
-    # xname <- tercen::remove.prefix( labs[1] )
-    # yname <- tercen::remove.prefix( labs[2] )
-    
-    # browser()
-    flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
-      # mutate(!! xname:=unlist(unname(df$data[,1])) ) %>%
-      # mutate(!! yname:=unlist(unname(df$data[,2])) ) %>%
-      # mutate(.i = seq_len(nrow(.)) - 1L) %>%
-      mutate(.i = unlist(unname(df$data["rowId"]))) %>%
-      ctx$addNamespace() %>%
-      as_relation() %>%
-      left_join_relation(ctx$crelation, ".i", ctx$crelation$rids) %>%
-      left_join_relation(img_df, list(), list()) %>%
-      as_join_operator(ctx$cnames, ctx$cnames) %>%
-      save_relation(ctx)
-    
-    
-    
-    
-    # polyDf <-data.frame('x'=coords.x, 'y'=coords.y, '.ci'=as.integer(0*seq(1,length(coords.x))) ) %>%
-    # ctx$addNamespace()
-    # browser()
-    # ctx$save(list(flagDf,img_df))
-    # save_relation(list(flagDf,img_df), ctx)
+
+    # fout <- paste0( tempfile(), ".png") 
+    # raw <- base64enc::base64decode(what = substr(input$save, 23, nchar(input$save)))
+    # png::writePNG(png::readPNG(raw), fout)    
+    # 
+    # img_df <- tim::png_to_df(fout, filename = "Gate.png")
+    # 
+    # 
+    # 
+    # wkf<-ctx$client$workflowService$get(ctx$workflowId, ctx$stepId)
+    # stp <- Find(function(p) identical(p$id, ctx$stepId), wkf$steps)
+    # 
+    # img_df$mimetype <- 'image/png'
+    # img_df$filename <- paste0( stp$name, '_Gate') 
+    # 
+    # 
+    # img_df <- img_df %>%
+    #   ctx$addNamespace() %>%
+    #   as_relation() 
+    # 
+    # ctx <- getCtx(session)
+    # 
+    # 
+    # labs <- unname(as.list(ctx$rselect()))[[1]]
+    # 
+    # 
+    # # browser()
+    # flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
+    #   mutate(.i = unlist(unname(df$data["rowId"]))) %>%
+    #   ctx$addNamespace() %>%
+    #   as_relation() %>%
+    #   left_join_relation(ctx$crelation, ".i", ctx$crelation$rids) %>%
+    #   left_join_relation(img_df, list(), list()) %>%
+    #   as_join_operator(ctx$cnames, ctx$cnames) %>%
+    #   save_relation(ctx)
+
     
     remove_modal_spinner()
   })

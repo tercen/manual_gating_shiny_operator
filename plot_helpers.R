@@ -277,7 +277,7 @@ create_plot_2d <- function( data, trans  ){
     # 1 or 0 ticks
     fac <- 5
     mfac <- max(b_data$.x)
-    while( mfac < 5 * 10^fac && fac > 2){ 
+    while( mfac < 5 * 10^fac && fac > -3){ 
       fac <- fac - 1
     }
     fac <- fac - 1
@@ -290,11 +290,12 @@ create_plot_2d <- function( data, trans  ){
     
     fac <- 5
     mfac <- max(b_data$.y)
-    while( mfac < 5 * 10^fac && fac > 2){ 
+    while( mfac < 5 * 10^fac && fac > -3){ 
       fac <- fac - 1
     }
     fac <- fac - 1
 
+    
     labs_y <- unlist(lapply(breaks.y, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
     if( sum(breaks.y.t >= min(b_data$.y) & breaks.y.t <= max(b_data$.y)) > 10 ){
       breaks.y <- breaks.y.t
@@ -302,7 +303,7 @@ create_plot_2d <- function( data, trans  ){
     }
     
     imgfile <-  paste0(tempfile(), '.png')
-    # browser()
+    
     p <- ggplot() +
       scale_x_continuous(limits = c( min(b_data$.x), max(b_data$.x) ),
                          breaks = breaks.x,
@@ -573,7 +574,7 @@ nearest_factor10 <- function( num, label=TRUE, factor=4){
     neg_fac <- -1
   }
   num <- abs(num)
-  
+
   if( num < 10^factor ){
     if(label == FALSE){
       return( neg_fac*(10^factor) )
@@ -589,9 +590,19 @@ nearest_factor10 <- function( num, label=TRUE, factor=4){
   if(label == FALSE){
     return(neg_fac * ( num - num %% 10^factor ) )
   }
-  round_num <- paste0(
-    format( neg_fac * ( num - num %% 10^factor )/1e3, scientific=FALSE),
-    'K')
+  
+  # Potentially might be good to consider displaying scale of
+  # K, M, 10^-2 and so on...
+  if( factor >= 3){
+    round_num <- paste0(
+      format( neg_fac * ( num - num %% 10^factor )/1e3, scientific=FALSE),
+      'K')  
+  }else{
+    round_num <- paste0(
+      format( neg_fac * ( num - num %% 10^factor ), scientific=FALSE),
+      '')  
+  }
+  
   
   
   return( round_num )

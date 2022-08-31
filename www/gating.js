@@ -5,6 +5,7 @@ var currentButton = new Array();
 var currentGroup = new Array();
 var currentTrans = 'linear';
 
+var isSaveEnabled = false;
 
 var currentMode  = 'none';
 var isPolygonClosed = false;
@@ -169,17 +170,27 @@ $(document).on('shiny:sessioninitialized', function(event) {
     
   update_active_button_list("linearBtn", grp);
   btn.classList.add('btn-active');
+  
+  
+  
+  
 });
 
 $(document).on('shiny:connected', function(event) {
   Shiny.setInputValue('connected', Math.random());
   
+  
+  
 });
 
 function save_gate(){
- var canvas = document.getElementById('gate_canvas');
- hide_all_btn();
- Shiny.setInputValue('save', canvas.toDataURL()); // Ask server to save 
+  if( isSaveEnabled == false ){
+    return
+  }
+  
+  var canvas = document.getElementById('gate_canvas');
+  hide_all_btn();
+  Shiny.setInputValue('save', canvas.toDataURL()); // Ask server to save 
   
   
   //document.getElementById('tool_label').innerHTML = "Manual Gating (View Mode)";
@@ -343,6 +354,8 @@ function clear_poly(){
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(channel_image,0,0);
   isPolygonClosed = false;
+  
+  enable_save( false );
 }
 
 function hide_all_btn(){
@@ -371,6 +384,8 @@ Shiny.addCustomMessageHandler('set_data_mode', function(data_mode){
     document.getElementById('circDrawBtn').style = 'visibility:hidden; display:none';
     document.getElementById('lineDrawBtn').style = 'visibility:visible; display:inline';
   }
+  
+  
 })
 
 
@@ -438,7 +453,31 @@ Shiny.addCustomMessageHandler('flag_info', function(flag_info){
 
 Shiny.addCustomMessageHandler('axis_bounds', function(bounds){
   axis_bounds = bounds;
+  
+  document.getElementById("connectGif").style = 'visibility:hidden';
+  
+  document.getElementById('saveBtnImg').style = 'visibility:visible';
+  document.getElementById('eraseBtnImg').style = 'visibility:visible';
+  document.getElementById('polyDrawBtnImg').style = 'visibility:visible';
+  document.getElementById('quadDrawBtnImg').style = 'visibility:visible';
+  document.getElementById('circDrawBtnImg').style = 'visibility:visible';
+
+  document.getElementById('linearBtnImg').style = 'visibility:visible';
+  document.getElementById('biexpBtnImg').style = 'visibility:visible';
+  document.getElementById('logBtnImg').style = 'visibility:visible';
+  
 })
+
+function enable_save( enb ){
+  if( enb === true){
+    document.getElementById("saveDisabledDiv").style = 'opacity:100%;';  
+    isSaveEnabled = true;
+  }else{
+    document.getElementById("saveDisabledDiv").style = 'opacity:50%;';  
+    isSaveEnabled = false;
+  }
+  
+}
 
 Shiny.addCustomMessageHandler('image_loaded', function(msg){
   var channel_image = document.getElementById('channel_image');
@@ -509,6 +548,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
               
               
               Shiny.setInputValue('polygon', poly);
+              enable_save( true );
             }else{
               globalThis.plist.push(coords);
             }
@@ -549,7 +589,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
               
               
           Shiny.setInputValue('polygon', poly);
-          
+          enable_save( true );
           
           render_quadrant(canvas, coords, globalThis.plist.slice(1,5) );
         } // END of quadrant drawing
@@ -576,7 +616,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
               
               
           Shiny.setInputValue('polygon', poly);
-          
+          enable_save( true );
           
           render_quadrant(canvas, coords, globalThis.plist.slice(1,3) );
         } // END if lineDraw
@@ -603,6 +643,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
           };
               
           Shiny.setInputValue('polygon', poly);
+          enable_save( true );
 
           render_ellipsoid(canvas, globalThis.plist );
         } // END if circDraw
@@ -745,3 +786,4 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
   Shiny.setInputValue('remove_spinner', Math.random());
   
 })
+

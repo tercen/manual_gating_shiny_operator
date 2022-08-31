@@ -403,10 +403,10 @@ server <- shinyServer(function(input, output, session) {
     # Check the barplot operator --> Do the result plot
     show_modal_spinner(spin="fading-circle", text = "Saving")
 
-    # fout <- paste0( tempfile(), ".png") 
-    # raw <- base64enc::base64decode(what = substr(input$save, 23, nchar(input$save)))
-    # png::writePNG(png::readPNG(raw), fout)    
-    # 
+    fout <- paste0( tempfile(), ".png")
+    raw <- base64enc::base64decode(what = substr(input$save, 23, nchar(input$save)))
+    # png::writePNG(png::readPNG(raw), fout)
+
     # img_df <- tim::png_to_df(fout, filename = "Gate.png")
     # 
     # 
@@ -422,21 +422,21 @@ server <- shinyServer(function(input, output, session) {
     #   ctx$addNamespace() %>%
     #   as_relation() 
     # 
-    ctx <- getCtx(session)
-
-
-    labs <- unname(as.list(ctx$rselect()))[[1]]
-
-
-    # browser()
-    flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
-      mutate(.i = unlist(unname(df$data["rowId"]))) %>%
-      ctx$addNamespace() %>%
-      as_relation() %>%
-      left_join_relation(ctx$crelation, ".i", ctx$crelation$rids) %>%
-      # left_join_relation(img_df, list(), list()) %>%
-      as_join_operator(ctx$cnames, ctx$cnames) %>%
-      save_relation(ctx)
+    # ctx <- getCtx(session)
+    # 
+    # 
+    # labs <- unname(as.list(ctx$rselect()))[[1]]
+    # 
+    # 
+    # # browser()
+    # flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
+    #   mutate(.i = unlist(unname(df$data["rowId"]))) %>%
+    #   ctx$addNamespace() %>%
+    #   as_relation() %>%
+    #   left_join_relation(ctx$crelation, ".i", ctx$crelation$rids) %>%
+    #   # left_join_relation(img_df, list(), list()) %>%
+    #   as_join_operator(ctx$cnames, ctx$cnames) %>%
+    #   save_relation(ctx)
 
     
     remove_modal_spinner()

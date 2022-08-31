@@ -407,21 +407,21 @@ server <- shinyServer(function(input, output, session) {
     raw <- base64enc::base64decode(what = substr(input$save, 23, nchar(input$save)))
     png::writePNG(png::readPNG(raw), fout)
 
-    # img_df <- tim::png_to_df(fout, filename = "Gate.png")
-    # 
-    # 
-    # 
+    img_df <- tim::png_to_df(fout, filename = fout)
+
+
+
     # wkf<-ctx$client$workflowService$get(ctx$workflowId, ctx$stepId)
     # stp <- Find(function(p) identical(p$id, ctx$stepId), wkf$steps)
     # 
-    # img_df$mimetype <- 'image/png'
-    # img_df$filename <- fout #paste0( stp$name, '_Gate') 
+    img_df$mimetype <- 'image/png'
+    img_df$filename <- fout #paste0( stp$name, '_Gate')
     # 
     # 
-    # img_df <- img_df %>%
-    #   ctx$addNamespace() %>%
-    #   as_relation() 
-    # 
+    img_df <- img_df %>%
+      ctx$addNamespace() %>%
+      as_relation()
+
     # ctx <- getCtx(session)
     # 
     # 

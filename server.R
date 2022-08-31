@@ -422,21 +422,21 @@ server <- shinyServer(function(input, output, session) {
     #   ctx$addNamespace() %>%
     #   as_relation() 
     # 
-    # ctx <- getCtx(session)
-    # 
-    # 
-    # labs <- unname(as.list(ctx$rselect()))[[1]]
-    # 
-    # 
-    # # browser()
-    # flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
-    #   mutate(.i = unlist(unname(df$data["rowId"]))) %>%
-    #   ctx$addNamespace() %>%
-    #   as_relation() %>%
-    #   left_join_relation(ctx$crelation, ".i", ctx$crelation$rids) %>%
-    #   left_join_relation(img_df, list(), list()) %>%
-    #   as_join_operator(ctx$cnames, ctx$cnames) %>%
-    #   save_relation(ctx)
+    ctx <- getCtx(session)
+
+
+    labs <- unname(as.list(ctx$rselect()))[[1]]
+
+
+    # browser()
+    flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
+      mutate(.i = unlist(unname(df$data["rowId"]))) %>%
+      ctx$addNamespace() %>%
+      as_relation() %>%
+      left_join_relation(ctx$crelation, ".i", ctx$crelation$rids) %>%
+      # left_join_relation(img_df, list(), list()) %>%
+      as_join_operator(ctx$cnames, ctx$cnames) %>%
+      save_relation(ctx)
 
     
     remove_modal_spinner()

@@ -141,6 +141,8 @@ server <- shinyServer(function(input, output, session) {
     coords.type <- input$polygon$type 
     
     if( coords.type %in% c('quadrant', 'line')){
+      # browser()
+      # Be more lenient as the raycast might understimate size by a few
       coords.x <- append( coords.x, image$plot_lim_x )
       coords.y <- append( coords.y, image$plot_lim_y )
     }
@@ -207,13 +209,10 @@ server <- shinyServer(function(input, output, session) {
       
       ce.x <- poly_df$x[1]
       ce.y <- poly_df$y[1]
-      #Math.sqrt( Math.pow((points[2].y - points[0].y),2) + Math.pow((points[2].x - points[0].x),2) ) ;
+
       rx2 <- ( (poly_df$y[3]-ce.y)^2 + (poly_df$x[3]-ce.x)^2 )
       ry2 <- ( (poly_df$y[2]-ce.y)^2 + (poly_df$x[2]-ce.x)^2 )
-      
-      
-      
-      
+
       flag<-points_in_ellipsis(point_cloud$x, point_cloud$y,
                          ce.x, ce.y,
                          rx2, ry2)
@@ -252,15 +251,23 @@ server <- shinyServer(function(input, output, session) {
       point_cloud <- point_cloud %>%
         mutate(flag = flag)
 
-      # browser()
-      # mean(coords.x[1:(length(coords.x)-1)]*900)
-      # mean( ((coords.y[1:(length(coords.y)-1)])*900)-image$plot_lim_y[1] )
       poly.px.x <-append( poly.px.x, list(((coords.x[1:(length(coords.x)-1)])*range.plot.x)+image$plot_lim_x[1]*0.97))
       poly.px.y <-append( poly.px.y, list(((coords.y[1:(length(coords.y)-1)])*range.plot.y)+image$plot_lim_y[1]))
     }
     
     if( coords.type == 'quadrant'){
-      # browser()
+      off <- 10
+      
+      poly_df$x[4] <- poly_df$x[4] - off
+      poly_df$x[6] <- poly_df$x[6] - off
+      poly_df$x[5] <- poly_df$x[5] + off
+      poly_df$x[7] <- poly_df$x[7] + off
+      
+      poly_df$y[3] <- poly_df$y[3] - off
+      poly_df$y[7] <- poly_df$y[7] - off
+      poly_df$y[2] <- poly_df$y[2] + off
+      poly_df$y[6] <- poly_df$y[6] + off
+      
       quad <- create_quadrant(  poly_df, c(6,1), c(6,4), coords.x, coords.y, range.plot.x, range.plot.y, image$plot_lim_x, image$plot_lim_y  )
       poly.quadrant <- quad[[1]]
       poly.px.x <-append( poly.px.x, list(quad[[2]]))
@@ -307,6 +314,9 @@ server <- shinyServer(function(input, output, session) {
                                               poly.quadrant$x, poly.quadrant$y)
       
       # browser()
+      
+
+      
       flag.top.left[flag.top.left >= 1] <- 1
       flag.top.right[flag.top.right >= 1] <- 2
       flag.bottom.left[flag.bottom.left >= 1] <- 3
@@ -316,6 +326,7 @@ server <- shinyServer(function(input, output, session) {
         flag.top.right + 
         flag.bottom.left + 
         flag.bottom.right
+
       
       point_cloud <- point_cloud %>%
         mutate(flag = flag)  

@@ -473,7 +473,7 @@ function enable_save( enb ){
     document.getElementById("saveDisabledDiv").style = 'opacity:100%;';  
     isSaveEnabled = true;
   }else{
-    document.getElementById("saveDisabledDiv").style = 'opacity:50%;';  
+    document.getElementById("saveDisabledDiv").style = 'opacity:25%;';  
     isSaveEnabled = false;
   }
   

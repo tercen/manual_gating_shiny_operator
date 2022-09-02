@@ -75,7 +75,7 @@ shinyUI(
                 
                 .div-btnDisable{
                   background-color:#eff5ffff; 
-                  opacity: 10%; 
+                  opacity: 25%; 
                   display:inline-block; 
                   height: 32px; 
                   width: 32px;

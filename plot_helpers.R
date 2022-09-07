@@ -132,15 +132,21 @@ create_plot_2d <- function( data, trans  ){
   cols <-  colorRampPalette(c("#440154", "#3b528b", "#21918c", 
                               "#5ec962", "#fde725"))(256)
   lab_names <- names(data)
-
-  if( trans == 'linear'){
+  
+  
+  if( "color" %in% lab_names ){
+    colors <- data$color
+  }else{
     x <- densCols(unlist(data[,1]), unlist(data[,2]), colramp=colorRampPalette(c("black", "white")),
                   nbin=256)
     dens <- col2rgb(x)[1,] + 1L
+    
+    colors <- cols[dens]  
+  }
+  
+  
 
-    colors <- cols[dens]
-
-
+  if( trans == 'linear'){
     xlim <- c(min(data[,1]), max(data[,1]*1.1))
     ylim <- c(min(data[,2]), max(data[,2]*1.1))
 
@@ -237,10 +243,7 @@ create_plot_2d <- function( data, trans  ){
     breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd.y/5 )
 
     # Density
-    x <- densCols(unlist(b_data[,1]), unlist(b_data[,2]), colramp=colorRampPalette(c("black", "white")),
-                  nbin=256 )
-    dens <- col2rgb(x)[1,] + 1L
-    colors <- cols[dens]
+
 
     breaks.x.t <-  break_transform(breaks = breaks.x,
                                  transformation = "biexp")

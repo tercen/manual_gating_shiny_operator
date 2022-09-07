@@ -38,7 +38,7 @@ server <- shinyServer(function(input, output, session) {
   source('plot_helpers.R')
   sourceCpp("polygon_test.cpp")
   
-  df        <- reactiveValues( data=NULL, flag=NULL, data_obj=NULL  )
+  df        <- reactiveValues( data=NULL, flag=NULL, data_obj=NULL )
   selected <- reactiveValues( pct=NULL, x=NULL, y=NULL , flag=NULL   )
   image <- reactiveValues( loaded=NULL, 
                            range_x=NULL, 
@@ -523,9 +523,28 @@ get_data <- function( session ){
     data_trans <- 'log'
   }
   
+  cols <- ctx$colors
+  
+  if( length(cols) == 0){
+    cols <- NULL
+  }else{
+    # TODO See what colors look like
+    col_df <- ctx$select(c(".ci", ".ri", cols[[1]]))
+    unique_cols <- unname(unlist(unique(col_df[,3])))
+    
+    pallete <- colorRampPalette(c("#7b3294","#c2a5cf", "#A7A7A7","#a6dba0", "#008837"))(256)  
+    
+    df <- df %>%
+      mutate(color = pallete[cut(col_df$.ci[col_df$.ri==0], 256)])
+ 
+  }
+ 
+  
 
   progress$close()
   # remove_modal_spinner()
+  
+  
   
   return( list(df, data_mode, data_trans))
   

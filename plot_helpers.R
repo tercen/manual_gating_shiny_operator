@@ -435,41 +435,6 @@ nearest_factor10 <- function( num, label=TRUE, factor=4){
 }
 
 
-create_custom_logicle_scale <- function(w=0.5, t=262144, m=4.5, a=0.1) {
-  
-  custom_logicle_trans <- logicleTransform(w = w,
-                                           t = t,
-                                           m = m,
-                                           a = a)
-  
-  custom_logicle_inv_trans <- inverseLogicleTransform(trans = custom_logicle_trans)
-  
-  custom_logicle_scale <- scales::trans_new(name = 'custom logicle',
-                                            transform = custom_logicle_trans,
-                                            inverse = custom_logicle_inv_trans)
-  
-  return(custom_logicle_scale)
-}
-
-
-
-create_custom_biexp_scale <- function(pos_decades, neg_decades, width_basis) {
-  custom_biexp_trans <- flowjo_biexp(pos = pos_decades,
-                                     neg = neg_decades, maxValue = 260000,
-                                     widthBasis = width_basis)
-  custom_biexp_inv_trans <- flowjo_biexp(pos = pos_decades, 
-                                         neg = neg_decades, 
-                                         widthBasis = width_basis,  maxValue = 260000,
-                                         inverse = TRUE)
-  
-  custom_biexp_scale <- scales::trans_new(name = 'custom biexponential',
-                                          transform = custom_biexp_trans,
-                                          inverse = custom_biexp_inv_trans)
-  
-  return(custom_biexp_scale)
-}
-
-
 
 custom_logicle_breaks <- function(x) {
   

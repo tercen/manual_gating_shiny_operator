@@ -80,6 +80,14 @@ shinyUI(
                   height: 32px; 
                   width: 32px;
                 }
+                
+                label{ display: table-cell; 
+                      text-align: left;
+                      vertical-align: middle; 
+                      width:140px;
+                } 
+                
+                .form-group { display: table-row;}
                 ' )),
     
     fixedRow(
@@ -115,7 +123,9 @@ shinyUI(
               class="toolbar", 
               fixedRow(
                 column(8, tags$canvas(id="gate_canvas", style="background-color: white;" ) ),
-                column(2, "Parameter Panel", style=" border-style:solid; position:absolute; left:650px; visibility:hidden;"),
+                column(2, 
+                       column(2, textInput("gateFlagPref", "Gate Flag Prefix", value="Marker"), style="width:340px"),
+                       style=" border-style:none; position:absolute; left:650px; width: 450px; margin-top:1.7em"),
                 column(1, 
                        imageOutput(outputId = "image_div")   ,  
                        style = "height:5px; visibility:hidden;")

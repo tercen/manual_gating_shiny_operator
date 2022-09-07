@@ -157,10 +157,10 @@
     },
     "dplyr": {
       "Package": "dplyr",
-      "Version": "1.0.4",
+      "Version": "1.0.10",
       "Source": "Repository",
-      "Repository": "RSPM",
-      "Hash": "01c82e3b053eb7660a8ace8d932265b8"
+      "Repository": "CRAN",
+      "Hash": "539412282059f7f0c07295723d23f987"
     },
     "ellipsis": {
       "Package": "ellipsis",
@@ -206,10 +206,10 @@
     },
     "generics": {
       "Package": "generics",
-      "Version": "0.1.0",
+      "Version": "0.1.3",
       "Source": "Repository",
-      "Repository": "RSPM",
-      "Hash": "4d243a9c10b00589889fe32314ffd902"
+      "Repository": "CRAN",
+      "Hash": "15e9634c0fcd294799e9b2e929ed1b86"
     },
     "ggplot2": {
       "Package": "ggplot2",
@@ -360,17 +360,17 @@
     },
     "openssl": {
       "Package": "openssl",
-      "Version": "1.4.3",
+      "Version": "2.0.2",
       "Source": "Repository",
-      "Repository": "RSPM",
-      "Hash": "a399e4773075fc2375b71f45fca186c4"
+      "Repository": "CRAN",
+      "Hash": "6d3bef2e305f55c705c674653c7d7d3d"
     },
     "pillar": {
       "Package": "pillar",
-      "Version": "1.8.0",
+      "Version": "1.8.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "f95cf85794546c4ac2b9a6ca42e671ff"
+      "Hash": "f2316df30902c81729ae9de95ad5a608"
     },
     "pkgconfig": {
       "Package": "pkgconfig",
@@ -416,10 +416,10 @@
     },
     "rlang": {
       "Package": "rlang",
-      "Version": "1.0.4",
+      "Version": "1.0.5",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "6539dd8c651e67e3b55b5ffea106362b"
+      "Hash": "971c3d698fc06dabdac6bc4bcda72dc4"
     },
     "sass": {
       "Package": "sass",
@@ -482,6 +482,20 @@
       "Repository": "CRAN",
       "Hash": "947e4e02a79effa5d512473e10f41797"
     },
+    "stringi": {
+      "Package": "stringi",
+      "Version": "1.7.8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "a68b980681bcbc84c7a67003fa796bfb"
+    },
+    "stringr": {
+      "Package": "stringr",
+      "Version": "1.4.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "a66ad12140cd34d4f9dfcc19e84fc2a5"
+    },
     "sys": {
       "Package": "sys",
       "Version": "3.4",
@@ -492,23 +506,40 @@
     "teRcenHttp": {
       "Package": "teRcenHttp",
       "Version": "1.0.21",
-      "Source": "Repository",
-      "Repository": "TERCEN",
-      "Hash": "18e6c920fb7ddb33ea4e265098ca24c9"
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "teRcenHttp",
+      "RemoteUsername": "tercen",
+      "RemoteRef": "1.0.21",
+      "RemoteSha": "2997686f396aedbf3f3bfc0a6eaeb623434351bb",
+      "Hash": "d11c997e9090e1f2200381c981764ebc"
     },
     "tercen": {
       "Package": "tercen",
-      "Version": "0.10.8",
-      "Source": "Repository",
-      "Repository": "TERCEN",
-      "Hash": "7676dd098faf9b2267411f8f129f5d8b"
+      "Version": "0.12.7",
+      "Source": "GitHub",
+      "Remotes": "tercen/tercenApi@0.12.7",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "teRcen",
+      "RemoteUsername": "tercen",
+      "RemoteRef": "0.12.7",
+      "RemoteSha": "b6872f66ae4de70420c80c834e6e4da076fee2d3",
+      "Hash": "8ed69059792b34fb7dd616d4a6a32eda"
     },
     "tercenApi": {
       "Package": "tercenApi",
-      "Version": "0.12.8",
-      "Source": "Repository",
-      "Repository": "TERCEN",
-      "Hash": "e92d54419184d7f403d082988a3c41c3"
+      "Version": "0.12.7",
+      "Source": "GitHub",
+      "Remotes": "tercen/teRcenHttp@1.0.21",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "tercenApi",
+      "RemoteUsername": "tercen",
+      "RemoteRef": "0.12.7",
+      "RemoteSha": "2c42ab2edef2365bd5d654be331a4ac6e93250f0",
+      "Hash": "cc1559c7c5b4030cca90a3d324e19b9b"
     },
     "tibble": {
       "Package": "tibble",
@@ -526,10 +557,23 @@
     },
     "tidyselect": {
       "Package": "tidyselect",
-      "Version": "1.1.0",
+      "Version": "1.1.2",
       "Source": "Repository",
-      "Repository": "RSPM",
-      "Hash": "6ea435c354e8448819627cf686f66e0a"
+      "Repository": "CRAN",
+      "Hash": "17f6da8cfd7002760a859915ce7eef8f"
+    },
+    "tim": {
+      "Package": "tim",
+      "Version": "0.0.15",
+      "Source": "GitHub",
+      "Remotes": "tercen/teRcen@0.12.7",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "tim",
+      "RemoteUsername": "tercen",
+      "RemoteRef": "0.0.16",
+      "RemoteSha": "f57913cb4d518dcf940a1d585cbced91b97fc81b",
+      "Hash": "4780603cca9911c0a3596d7d82cfbcb9"
     },
     "utf8": {
       "Package": "utf8",
@@ -537,6 +581,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "c9c462b759a5cc844ae25b5942654d13"
+    },
+    "uuid": {
+      "Package": "uuid",
+      "Version": "1.1-0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "f1cb46c157d080b729159d407be83496"
     },
     "vctrs": {
       "Package": "vctrs",

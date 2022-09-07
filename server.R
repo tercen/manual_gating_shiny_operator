@@ -1,7 +1,7 @@
 library(shiny)
 library(tercen)
 library(tercenApi)
-# library(tim)
+library(tim)
 library(dplyr)
 library(tidyr)
 
@@ -145,32 +145,7 @@ server <- shinyServer(function(input, output, session) {
     
     im_rx <- image$range_x
     im_ry <- image$range_y
-    
-    # save('axis.limits', 'coords.x', 'coords.y', 'point_cloud',
-    # 'range.x', 'range.y', 'im_rx', 'im_ry',
-    # file='test.Rda')
-    # if( plot_mode$trans == 'biexp' ){
-    #   t_data <- df$data[,1:2]
-    #   colnames(t_data)    <- c('.x','.y')
-    #   
-    #   custom_biexp_scale <- create_custom_biexp_scale(pos_decades = 5, 
-    #                                                   neg_decades = -1.5, 
-    #                                                   width_basis = -13)
-    #   
-    #   point_cloud <- transform_xy( t_data, custom_biexp_scale )
-    # 
-    # }
-    # 
-    # if( plot_mode$trans == 'logicle' ){
-    #   t_data <- df$data[,1:2]
-    #   colnames(t_data)    <- c('.x','.y')
-    #   
-    #   custom_logicle_scale <- create_custom_logicle_scale()
-    #   
-    #   point_cloud <- transform_xy( t_data, custom_logicle_scale)
-    #   
-    # }
-    
+
     range.plot.x <- abs(axis.limits[3] - axis.limits[1])
     range.plot.y <- abs(axis.limits[2] - axis.limits[4])
     
@@ -186,10 +161,10 @@ server <- shinyServer(function(input, output, session) {
       get_converted_scale( x, image$breaks_y, image$breaks_y_rel, decreasing=TRUE )
     } ))
     
-    # browser()
+    
     poly_df <- data.frame("x"=coords.poly.x,
                           "y"=coords.poly.y )
-    # # NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
+
     names(point_cloud) <- c('x', 'y')
     
     
@@ -209,22 +184,12 @@ server <- shinyServer(function(input, output, session) {
                          ce.x, ce.y,
                          rx2, ry2)
       
-      point_cloud <- point_cloud %>%
-        mutate(flag = flag)  
+      # point_cloud <- point_cloud %>%
+      #   mutate(flag = flag)  
       
       
       poly.px.x <-append( poly.px.x, list(((coords.x[1])*range.plot.x)+image$plot_lim_x[1]*0.97))
       poly.px.y <-append( poly.px.y, list(((coords.y[1])*range.plot.y)+image$plot_lim_y[1]))
-      # t0 <- Sys.time()
-      # flag <- mapply( function(x, y){
-      #     if( ((x - ce.x )^2 / rx2) + ((y - ce.y )^2 / ry2) <= 1) {
-      #       1
-      #     }else{
-      #       0
-      #     }
-      #   },
-      #   point_cloud$x, point_cloud$y)
-      # tf <- Sys.time()
     }
     
     if( coords.type == 'poly'){
@@ -240,8 +205,8 @@ server <- shinyServer(function(input, output, session) {
 
       flag[flag>0] <- 1
 
-      point_cloud <- point_cloud %>%
-        mutate(flag = flag)
+      # point_cloud <- point_cloud %>%
+      #   mutate(flag = flag)
 
       poly.px.x <-append( poly.px.x, list(((coords.x[1:(length(coords.x)-1)])*range.plot.x)+image$plot_lim_x[1]*0.97))
       poly.px.y <-append( poly.px.y, list(((coords.y[1:(length(coords.y)-1)])*range.plot.y)+image$plot_lim_y[1]))
@@ -310,18 +275,25 @@ server <- shinyServer(function(input, output, session) {
 
       
       flag.top.left[flag.top.left >= 1] <- 1
-      flag.top.right[flag.top.right >= 1] <- 2
-      flag.bottom.left[flag.bottom.left >= 1] <- 3
-      flag.bottom.right[flag.bottom.right >= 1] <- 4
+      flag.top.right[flag.top.right >= 1] <- 1
+      flag.bottom.left[flag.bottom.left >= 1] <- 1
+      flag.bottom.right[flag.bottom.right >= 1] <- 1
       
-      flag <- flag.top.left + 
-        flag.top.right + 
-        flag.bottom.left + 
-        flag.bottom.right
+      # flag is used to plot percentages in the UI
+      flag <- flag.top.left +
+        flag.top.right*2 +
+        flag.bottom.left*3 +
+        flag.bottom.right*4
 
+      # pref <- input$gateFlagPref
+      # 
+      # point_cloud <- point_cloud %>%
+      #   mutate("{pref}_NegNeg" := flag.bottom.left)  %>%
+      #   mutate("{pref}_PosNeg" := flag.bottom.right)  %>%
+      #   mutate("{pref}_NegPos" := flag.top.left)  %>%
+      #   mutate("{pref}_PosPos" := flag.top.right)  
       
-      point_cloud <- point_cloud %>%
-        mutate(flag = flag)  
+
     }
     
     if( coords.type == 'line'){
@@ -339,24 +311,27 @@ server <- shinyServer(function(input, output, session) {
       flag.right <- point_cloud$x >= (poly_df$x[1])
       
       flag.left[flag.left >= 1] <- 1
-      flag.right[flag.right >= 1] <- 2
+      flag.right[flag.right >= 1] <- 1
       
-      flag <- flag.left + flag.right
+      flag <- flag.left + flag.right*2
       
-      
-      point_cloud <- point_cloud %>%
-        mutate(flag = flag)  
+      pref <- input$gateFlagPref
+
+      # point_cloud <- point_cloud %>%
+      #   mutate("{pref}_Neg" := flag.left)  %>%
+      #   mutate("{pref}_Pos" := flag.right)  
+
     }
     
     pcts <- c()
     xs <- c()
     ys <- c()
     
-    flag_vals <- unique(point_cloud$flag)
+    flag_vals <- unique(flag)
     
     for( fl in flag_vals){
       if(fl > 0){
-        pct <-  100*sum(point_cloud$flag == fl) / length(point_cloud$flag)
+        pct <-  100*sum(flag == fl) / length(flag)
         pct <-  c(paste0( format(pct, digits = 3, scientific = FALSE), '%') )
         
         pcts <- append( pcts, pct)
@@ -366,7 +341,7 @@ server <- shinyServer(function(input, output, session) {
       }
     }
     
-    selected$flag <- point_cloud$flag
+    selected$flag <- flag
     
     coords.x.px <- coords.x
     coords.y.px <- coords.y
@@ -421,14 +396,27 @@ server <- shinyServer(function(input, output, session) {
       ctx$addNamespace() %>%
       as_relation()
 
-    # ctx <- getCtx(session)
-    # 
-    # 
-    # labs <- unname(as.list(ctx$rselect()))[[1]]
-    # 
-    # 
-    # # browser()
-    flagDf <- data.frame("flag"=as.numeric(selected$flag)) %>%
+    flag_vec <- as.numeric(selected$flag)
+    pref <- input$gateFlagPref
+    
+    flags <- tibble("{pref}"=flag_vec) 
+    
+    coords.type <- input$polygon$type 
+    if( coords.type == 'line'){
+      flags <- tibble("{pref}_Neg" := ifelse(flag_vec==1, 1, 0)) %>%
+        mutate("{pref}_Pos" := ifelse(flag_vec==2, 1, 0)   )
+    }
+    
+    if( coords.type == 'quadrant'){
+      flags <- tibble("{pref}_NegNeg" := ifelse(flag_vec==3, 1, 0)) %>%
+        mutate("{pref}_PosNeg" := ifelse(flag_vec==4, 1, 0)   )  %>%
+        mutate("{pref}_NegPos" := ifelse(flag_vec==1, 1, 0)   )  %>%
+        mutate("{pref}_PosPos" := ifelse(flag_vec==2, 1, 0)   )  
+    }
+    
+
+    
+    flagDf <- flags %>%
       mutate(.i = unlist(unname(df$data["rowId"]))) %>%
       ctx$addNamespace() %>%
       as_relation() %>%

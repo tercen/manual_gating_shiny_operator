@@ -110,19 +110,6 @@ shinyUI(
                               <img class="btn-icon" src="save_icon.png" onClick=save_gate(); 
                               id="saveBtnImg" style="visibility:hidden;"></img>
                             </button></div>'),
-              HTML('<span class="separator">|</span>'),
-              HTML('<button type="button" id="linearBtn" class="btn-tool" data-group="trans" title="Linear Transform">
-                              <img class="btn-icon" src="identity_icon.png" onClick=select_transform("linearBtn");
-                              id="linearBtnImg" style="visibility:hidden"></img>
-                            </button>'),
-              HTML('<button type="button" id="biexpBtn" class="btn-tool" data-group="trans" title="Biexp Transform">
-                              <img class="btn-icon" src="biexp_icon.png" onClick=select_transform("biexpBtn"); 
-                              id="biexpBtnImg" style="visibility:hidden"></img>
-                            </button>'),
-              HTML('<button type="button" id="logBtn" class="btn-tool" data-group="trans" title="Logicle Transform">
-                              <img class="btn-icon" src="logicle_icon.png" onClick=select_transform("logBtn"); 
-                              id="logBtnImg" style="visibility:hidden"></img>
-                            </button>'),
               HTML('<img  src="Connecting.gif" style="position: absolute; right: 0px; margin-top: 5px; margin-right: 10px;" 
                    height="30" width="150" id="connectGif"/>'),
               class="toolbar", 

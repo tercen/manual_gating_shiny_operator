@@ -3,7 +3,7 @@ globalThis.plist = new Array();
 
 var currentButton = new Array();
 var currentGroup = new Array();
-var currentTrans = 'linear';
+
 
 var isSaveEnabled = false;
 
@@ -162,18 +162,6 @@ $(document).on('shiny:value', function(event) {
 $(document).on('shiny:sessioninitialized', function(event) {
   
   Shiny.setInputValue('pageLoaded', Math.random());
-  
-  // Initialize with identity transform selected
-  let btn = document.getElementById("linearBtn");
-  let div = btn.parentElement;
-  let grp = btn.getAttribute("data-group");
-    
-  update_active_button_list("linearBtn", grp);
-  btn.classList.add('btn-active');
-  
-  
-  
-  
 });
 
 $(document).on('shiny:connected', function(event) {
@@ -197,65 +185,19 @@ function save_gate(){
 }
 
 
-function select_transform(btnId){
-  let t_type = "linear";
-  
-  if( btnId === "biexpBtn"){
-    t_type = "biexp";
-  }
-  
-  if( btnId === "logBtn"){
-    t_type = "logicle";
-  }
-  
-  globalThis.plist = new Array();
-  let tmpBtn = currentButton;
-  //select_button(-1);
-
-  Shiny.setInputValue('transformSelected', t_type);
-
-  //select_button(tmpBtn);
-  select_button(btnId);
-  
-  
-}
 
 function select_button(objId){
   clear_poly();
   
-  // TODO
-  // Select by group
-  // alert(btn.getAttribute("data-group"));
-  /*if( currentButton.length > 0 ){
-    currentMode = 'none';
-    
-    let btn = document.getElementById(currentButton);
-    let div = btn.parentElement;
-    
-    if( objId != ''){
-      let btn_new = document.getElementById(objId);
-      let grp_new = btn_new.getAttribute("data-group");
-      
-      let grp_old = btn.getAttribute("data-group");
-      
-      
-      
-      if( grp_new === grp_old ){
-        btn.classList.remove('btn-active');
-        div.classList.remove('btn-active');
-      }
-      
-    }
 
-
-    currentButton = '';
-  }*/
   
   if( objId != -1){
     let btn = document.getElementById(objId);
     //alert( objId + ' - ' + btn);
     let div = btn.parentElement;
     let grp = btn.getAttribute("data-group");
+    
+    
     
     if( currentButton.length > 0 ){
       
@@ -270,31 +212,31 @@ function select_button(objId){
         oldDiv.classList.remove('btn-active');
       }
       
+
+      }
+    
       update_active_button_list(objId, grp);
 
       btn.classList.add('btn-active');
-    }
-    
-
     
     
-    //currentButton = objId;
-    
-    if( objId == 'polyDrawBtn'){
-      currentMode = 'polyDraw';
-    }
-    
-    if( objId == 'quadDrawBtn'){
-      currentMode = 'quadDraw';
-    }
-    
-    if( objId == 'circDrawBtn'){
-      currentMode = 'circDraw';
-    }
-    
-    if( objId == 'lineDrawBtn'){
-      currentMode = 'lineDraw';
-    }
+      //currentButton = objId;
+      
+      if( objId == 'polyDrawBtn'){
+        currentMode = 'polyDraw';
+      }
+      
+      if( objId == 'quadDrawBtn'){
+        currentMode = 'quadDraw';
+      }
+      
+      if( objId == 'circDrawBtn'){
+        currentMode = 'circDraw';
+      }
+      
+      if( objId == 'lineDrawBtn'){
+        currentMode = 'lineDraw';
+      }
   }
     
 }
@@ -316,7 +258,6 @@ function get_active_button_id( btnGrp ){
 function update_active_button_list( btnId, btnGrp ) {
   //currentButton = [];
   //currentGroup = [];
-  
   if( currentGroup.length == 0){
     currentButton.push(btnId);
     currentGroup.push(btnGrp);
@@ -365,9 +306,6 @@ function hide_all_btn(){
   document.getElementById('quadDrawBtn').style = 'visibility:hidden; display: none;';
   document.getElementById('circDrawBtn').style = 'visibility:hidden; display: none;';
   document.getElementById('lineDrawBtn').style = 'visibility:hidden; display: none;';
-  document.getElementById('linearBtn').style = 'visibility:hidden; display: none;';
-  document.getElementById('biexpBtn').style = 'visibility:hidden; display: none;';
-  document.getElementById('logBtn').style = 'visibility:hidden; display: none;';
 }
 
 Shiny.addCustomMessageHandler('setViewOnly', function(ignore){
@@ -462,9 +400,6 @@ Shiny.addCustomMessageHandler('axis_bounds', function(bounds){
   document.getElementById('quadDrawBtnImg').style = 'visibility:visible';
   document.getElementById('circDrawBtnImg').style = 'visibility:visible';
 
-  document.getElementById('linearBtnImg').style = 'visibility:visible';
-  document.getElementById('biexpBtnImg').style = 'visibility:visible';
-  document.getElementById('logBtnImg').style = 'visibility:visible';
   
 })
 

@@ -3,36 +3,44 @@
 ### Roadmap
 
 #### To 0.1.0
-* ~~ Add biexponential scaling ~~
-* ~~ Show saved gate when opening the operator again ~~
-* ~~ Selection Accuracy Improvement ~~
+* <del>Add biexponential scaling</del>
+* <del>Show saved gate when opening the operator again</del>
+* <del>Selection Accuracy Improvement</del>
 
 #### To 0.2.0
-* ~~ 1d Gating ~~
-* ~~ Quadrant gating ~~
-* ~~ Add log scaling ~~
-* ~~ Change input mapping to gather ~~
+* <del>1d Gating</del>
+* <del>Quadrant gating</del>
+* <del>Add log scaling</del>
+* <del>Change input mapping to gather</del>
 
 #### To 0.3.0
-* ~~ Overall plot consistency ~~
-* ~~ Ellipsoid gating ~~
-* ~~ Placement of cell selection percentage ~~
-* ~~ Spider gating ~~
+* <del>Overall plot consistency</del>
+* <del>Ellipsoid gating</del>
+* <del>Placement of cell selection percentage</del>
+* <del>Spider gating</del>
 
 #### To 0.4.0
-* ~~ Move transforms out of the operator  ~~
+* Move transforms out of the operator
+* Change how flags are saved [+,-], single column for each - 1d and quadrant
+* Flag column names should come from a parameter set by the user
+* Add margins to the axes
+* Color dots by an optional 'color' column [flag or continuous]
 
-#### Unscheduled
+
+#### Unscheduled 
 * Create an update mode (read polygon info and update it)
+* Add support for multiple polygonal gates on same plot
 
 
 
 #### Known Bugs / Limitations
-* Logicle transform is unstable, crashing on certain data. 
-* Plot parameters are currently hard-coded and fixed.
+* Points lying on the edge of the axis are invisible to the user and might no be selected
 * Plot ticks in the 1d are not always appearing (depends on data range)
-* ~~ Loading modal dialogue does not start with page load ~~ Now just show a GIF and hide the buttons while it waits for the connection to the Shiny server
-* ~~ The operator currently outputs the input mapping. The JoinOperator needs to be fixed, otherwise it tries to add all flag values to each input entry ~~
-* ~~ Trying to save the gate before drawing is currently allowed and causes an error ~~
-* ~~ Axis appearance is different between linear and biexponential plots ~~
+* <del>Loading modal dialogue does not start with page load <del>Now just show a GIF and hide the buttons while it waits for the connection to the Shiny server</del>
+* <del>The operator currently outputs the input mapping. The JoinOperator needs to be fixed, otherwise it tries to add all flag values to each input entry</del>
+* <del>Trying to save the gate before drawing is currently allowed and causes an error</del>
+* <del>Axis appearance is different between linear and biexponential plots</del>
 
+#### Deprecated requirements
+* Logicle transform is unstable, crashing on certain data. [No more transforms]
+* Plot parameters are currently hard-coded and fixed. [No more transforms]

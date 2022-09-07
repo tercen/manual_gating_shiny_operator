@@ -1,7 +1,5 @@
 
 
-cols <-  colorRampPalette(c("#440154", "#3b528b", "#21918c", 
-                            "#5ec962", "#fde725"))(256)
 
 create_plot_1d <- function( data, trans ){
   # Create 1d density plot
@@ -10,7 +8,6 @@ create_plot_1d <- function( data, trans ){
   lab_names <- names(data)
   
   if( trans == 'linear'){
-    #FROM HERE
     xlim <- c(min(xt), max(xt*1.1))
     if( xlim[2] < 1.5e5){
       xticks <- seq( xlim[1], xlim[2], by=1e4 )
@@ -55,23 +52,11 @@ create_plot_1d <- function( data, trans ){
     
   }
   
-  if( trans %in% c('biexp','logicle')){
+  if( trans %in% c('biexp','logicle', 'log')){
     xt <- data[,1]
     
-    if( trans == 'biexp'){
-      trans_name <- 'biexponential'  
-      custom_scale <- create_custom_biexp_scale(pos_decades = 5, 
-                                                neg_decades = -1.5, 
-                                                width_basis = -13)
-    }else{
-      trans_name <- 'logicle'  
-      custom_scale <- create_custom_logicle_scale()
-      
-    }
-    
     rd <- max(xt)-min(xt)
-    xt <- transform_x( xt, custom_scale)
-    
+
     breaks.x <- seq(min(xt), max(xt), by=rd/5 )
     breaks.x.t <-  break_transform(breaks = breaks.x, 
                                  transformation = trans_name)
@@ -101,7 +86,6 @@ create_plot_1d <- function( data, trans ){
       labs(x=lab_names[1], y='Density')  +
       scale_x_continuous(limits = c( min(xt), max(xt) ),
                          breaks = breaks.x,
-                         # trans = custom_scale,
                          labels = labs_x,
                          expand=c(0,0),
                          sec.axis = dup_axis(labels=c())) +
@@ -144,6 +128,9 @@ create_plot_1d <- function( data, trans ){
 
 
 create_plot_2d <- function( data, trans  ){
+  # Viridis pallete
+  cols <-  colorRampPalette(c("#440154", "#3b528b", "#21918c", 
+                              "#5ec962", "#fde725"))(256)
   lab_names <- names(data)
 
   if( trans == 'linear'){
@@ -240,22 +227,10 @@ create_plot_2d <- function( data, trans  ){
     
   }
 
-  if( trans %in% c('biexp','logicle')){
-    t_data <- data
-    colnames(t_data)    <- c('.x','.y')
+  if( trans %in% c('biexp','logicle', 'log')){
+    b_data <- data
+    colnames(b_data)    <- c('.x','.y')
 
-    if( trans == 'biexp'){
-      trans_name <- 'biexponential'
-      custom_scale <- create_custom_biexp_scale(pos_decades = 5,
-                                                neg_decades = -1.5,
-                                                width_basis = -13)
-    }else{
-      trans_name <- 'logicle'
-      custom_scale <- create_custom_logicle_scale()
-
-    }
-
-    b_data <- transform_xy( t_data, custom_scale)
     rd.x <- max(b_data$.x)-min(b_data$.x)
     rd.y <- max(b_data$.y)-min(b_data$.y)
     breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd.x/5 )
@@ -268,9 +243,9 @@ create_plot_2d <- function( data, trans  ){
     colors <- cols[dens]
 
     breaks.x.t <-  break_transform(breaks = breaks.x,
-                                 transformation = trans_name)
+                                 transformation = "biexp")
     breaks.y.t <-  break_transform(breaks = breaks.y,
-                                 transformation = trans_name)
+                                 transformation = "biexp")
 
     
     # Data range is too narrow to sensibly display at the log scale if there is
@@ -419,155 +394,6 @@ get_axis_plot_lims <- function( imgfile ){
   return(list(plot_lim_x, plot_lim_y))
 }
 
-# if( trans == 'linear'){
-#   # Density
-#   x <- densCols(unlist(data[,1]), unlist(data[,2]), colramp=colorRampPalette(c("black", "white")),
-#                 nbin=256)
-#   dens <- col2rgb(x)[1,] + 1L
-#   
-#   colors <- cols[dens]
-#   
-#   
-#   xlim <- c(min(data[,1]), max(data[,1]*1.1))
-#   ylim <- c(min(data[,2]), max(data[,2]*1.1))
-#   
-#   if( xlim[2] < 1.5e5){
-#     xticks <- seq( xlim[1], xlim[2], by=1e4 )
-#     fac<-3
-#   }else{
-#     xticks <- seq( xlim[1], xlim[2], by=5e4 )
-#     fac<-4
-#   }
-#   
-#   
-#   if( ylim[2] < 1.5e5){
-#     yticks <- seq( ylim[1], ylim[2], by=1e4 )
-#     fac<-3
-#   }else{
-#     yticks <- seq( ylim[1], ylim[2], by=5e4 )
-#     fac<-4
-#   }
-#   
-#   
-#   xtick_labels <- unlist(lapply(xticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
-#   ytick_labels <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
-#   
-#   xticks <- unlist(lapply( xticks, function(x) nearest_factor10(x, FALSE, fac)))
-#   yticks <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = FALSE, factor=fac)))
-#   
-#   imgfile <-  paste0(tempfile(), '.png') # '/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
-#   p <- ggplot() +
-#     geom_scattermost(
-#       as.matrix(data),
-#       pointsize=1.5,
-#       col=colors, 
-#       pixels=c(600,600)) +
-#     labs(x=lab_names[1], y=lab_names[2])  +
-#     scale_y_continuous(breaks = yticks, labels = ytick_labels) +
-#     scale_x_continuous(breaks = xticks, labels = xtick_labels) +
-#     theme(panel.background = element_rect(fill = 'white', colour = 'white'),
-#           axis.line.x=element_line(color="#07070F" ),
-#           axis.line.y=element_line(color="#07070F" ),
-#           panel.grid = element_line(color = "#AAAAAA",
-#                                     size = 0.1,
-#                                     linetype = 2),
-#           text = element_text(size=8)) + 
-#     annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = -Inf, xend = Inf, size = 1) +
-#     annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
-#   
-#   
-#   # browser()
-#   pb <- ggplot_build(p)
-#   image$range_x <- pb$layout$panel_params[[1]]$x.range
-#   image$range_y <- pb$layout$panel_params[[1]]$y.range
-#   
-# }
-# 
-# if( trans %in% c('biexp','logicle')){
-#   t_data <- data
-#   colnames(t_data)    <- c('.x','.y')
-#   
-#   if( trans == 'biexp'){
-#     trans_name <- 'biexponential'  
-#     custom_scale <- create_custom_biexp_scale(pos_decades = 5, 
-#                                               neg_decades = -1.5, 
-#                                               width_basis = -13)
-#   }else{
-#     trans_name <- 'logicle'  
-#     custom_scale <- create_custom_logicle_scale()
-#     
-#   }
-#   
-#   b_data <- transform_xy( t_data, custom_scale)
-#   rd.x <- max(t_data$.x)-min(t_data$.x)
-#   rd.y <- max(t_data$.y)-min(t_data$.y)
-#   breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd.x/5 )
-#   breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd.y/5 )
-#   
-#   # Density
-#   x <- densCols(unlist(b_data[,1]), unlist(b_data[,2]), colramp=colorRampPalette(c("black", "white")),
-#                 nbin=256 )
-#   dens <- col2rgb(x)[1,] + 1L
-#   colors <- cols[dens]
-#   
-#   breaks.x <-  break_transform(breaks = breaks.x, 
-#                                transformation = trans_name)
-#   breaks.y <-  break_transform(breaks = breaks.y, 
-#                                transformation = trans_name)
-#   
-#   imgfile <-  paste0(tempfile(), '.png')
-#   
-#   p <- ggplot() +
-#     scale_x_continuous(limits = c( min(b_data$.x), max(b_data$.x) ),
-#                        breaks = breaks.x,
-#                        trans = custom_scale,
-#                        labels = custom_tick_labels(breaks.x),
-#                        sec.axis = dup_axis(labels=c())) +
-#     scale_y_continuous(limits = c( min(b_data$.y), max(b_data$.y) ),
-#                        breaks = breaks.y,
-#                        trans = custom_scale,
-#                        labels = custom_tick_labels(breaks.y),
-#                        sec.axis = dup_axis(labels = c())) +
-#     geom_scattermore(
-#       data=t_data,
-#       mapping=aes(x=.x, y=.y),
-#       pointsize=1.5,
-#       col=colors,
-#       pixels=c(600,600)) +
-#     labs(x=lab_names[1], y=lab_names[2])  +
-#     theme(panel.background = element_rect(fill = 'white', colour = 'white'),
-#           axis.line.x=element_line(color="#07070F" ),
-#           axis.line.y=element_line(color="#07070F" ),
-#           text = element_text(size=8),
-#           axis.ticks.x.top = element_blank(),
-#           axis.title.x.top = element_blank(),
-#           axis.ticks.y.right = element_blank(),
-#           axis.title.y.right = element_blank()) 
-#   
-#   p<- set_biexp_ticks(p, breaks.x)
-#   
-#   pb <- ggplot_build(p)
-#   
-#   ad <- data.frame(.x = pb$layout$panel_params[[1]]$x.range,
-#                    .y = pb$layout$panel_params[[1]]$y.range)
-#   br <- transform_xy( ad, custom_scale, df_range = b_data)
-#   
-#   image$range_x <- br$.x
-#   image$range_y <- br$.y
-#   
-#   
-# }
-# 
-# 
-# ggsave(imgfile, units='in', width=3, height=3, p ) 
-# 
-# }else{
-#   session$sendCustomMessage("setViewOnly", runif(1))
-# }
-# 
-# 
-# 
-# 
 nearest_factor10 <- function( num, label=TRUE, factor=4){
   neg_fac <- 1
   if(num<0){
@@ -591,7 +417,7 @@ nearest_factor10 <- function( num, label=TRUE, factor=4){
     return(neg_fac * ( num - num %% 10^factor ) )
   }
   
-  # Potentially might be good to consider displaying scale of
+  # It is potentially good to consider displaying scale of
   # K, M, 10^-2 and so on...
   if( factor >= 3){
     round_num <- paste0(
@@ -608,39 +434,7 @@ nearest_factor10 <- function( num, label=TRUE, factor=4){
   return( round_num )
 }
 
-transform_x <- function( x, custom_scale, df_range=NULL){
- 
-  
-  if( is.null(df_range)){
-    df_range <- x
-  }
-  xt <- custom_scale$transform(x = x)
-  # xtn <- (xt - min(xt))/(max(xt)-min(xt))
-  # rd <- max(df_range)-min(df_range)
-  
-  # return( (xtn * rd) + min(df_range) )
-  return( xt )
-}
 
-transform_xy <- function( t_data, custom_scale, df_range=NULL){
-  b_data <- t_data
-  if( is.null(df_range)){
-    df_range <- t_data
-  }
-  # NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
-  xt <- custom_scale$transform(x = t_data$.x  )
-  # xtn <- (xt - min(xt))/(max(xt)-min(xt))
-  # rd <- max(df_range$.x)-min(df_range$.x)
-  b_data[,1] <- xt #(xtn * rd) + min(df_range$.x)
-  
-  yt <- custom_scale$transform(x = t_data$.y  )
-  # ytn <- (yt - min(yt))/(max(yt)-min(yt))
-  # rd <- max(df_range$.y)-min(df_range$.y)
-  b_data[,2] <- yt #(ytn * rd)+min(df_range$.y)
-  
-  return(b_data)
-  
-}
 create_custom_logicle_scale <- function(w=0.5, t=262144, m=4.5, a=0.1) {
   
   custom_logicle_trans <- logicleTransform(w = w,
@@ -746,7 +540,8 @@ custom_logicle_breaks <- function(x) {
 
 break_transform <- function(breaks, transformation)
 {
-  if ((transformation == "biexponential") || (transformation == "logicle")) {
+  if ((transformation == "biexponential") || (transformation == "logicle")
+      || (transformation == "log")) {
     x.breaks <- custom_logicle_breaks(breaks)
   } else {
     x.breaks <- breaks

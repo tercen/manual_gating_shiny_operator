@@ -10,12 +10,8 @@ library("scattermore")
 library(grid)
 library('png')
 
-library(flowCore)
-library(flowWorkspace)
-
-
-library(flowCore)
-library(flowWorkspace)
+# library(flowCore)
+# library(flowWorkspace)
 
 library(jsonlite)
 library(shinybusy)
@@ -27,9 +23,9 @@ library(Rcpp)
 
 
 # CD4/CD8
-# http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/95dd2038-15bb-4edf-ac91-1298a1189632
+# http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/e21fa40a-73e7-47c5-b84e-68c00d6e5738
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-# options("tercen.stepId"= "95dd2038-15bb-4edf-ac91-1298a1189632")
+# options("tercen.stepId"= "e21fa40a-73e7-47c5-b84e-68c00d6e5738")
 
 
 # 1D
@@ -73,7 +69,7 @@ server <- shinyServer(function(input, output, session) {
       
       df$data <- tmp[[1]]
       plot_mode$type <- tmp[[2]]
-      
+      plot_mode$trans <- tmp[[3]]
       
       lab_names <- names(df$data)
       
@@ -157,27 +153,27 @@ server <- shinyServer(function(input, output, session) {
     # save('axis.limits', 'coords.x', 'coords.y', 'point_cloud',
     # 'range.x', 'range.y', 'im_rx', 'im_ry',
     # file='test.Rda')
-    if( plot_mode$trans == 'biexp' ){
-      t_data <- df$data[,1:2]
-      colnames(t_data)    <- c('.x','.y')
-      
-      custom_biexp_scale <- create_custom_biexp_scale(pos_decades = 5, 
-                                                      neg_decades = -1.5, 
-                                                      width_basis = -13)
-      
-      point_cloud <- transform_xy( t_data, custom_biexp_scale )
-
-    }
-    
-    if( plot_mode$trans == 'logicle' ){
-      t_data <- df$data[,1:2]
-      colnames(t_data)    <- c('.x','.y')
-      
-      custom_logicle_scale <- create_custom_logicle_scale()
-      
-      point_cloud <- transform_xy( t_data, custom_logicle_scale)
-      
-    }
+    # if( plot_mode$trans == 'biexp' ){
+    #   t_data <- df$data[,1:2]
+    #   colnames(t_data)    <- c('.x','.y')
+    #   
+    #   custom_biexp_scale <- create_custom_biexp_scale(pos_decades = 5, 
+    #                                                   neg_decades = -1.5, 
+    #                                                   width_basis = -13)
+    #   
+    #   point_cloud <- transform_xy( t_data, custom_biexp_scale )
+    # 
+    # }
+    # 
+    # if( plot_mode$trans == 'logicle' ){
+    #   t_data <- df$data[,1:2]
+    #   colnames(t_data)    <- c('.x','.y')
+    #   
+    #   custom_logicle_scale <- create_custom_logicle_scale()
+    #   
+    #   point_cloud <- transform_xy( t_data, custom_logicle_scale)
+    #   
+    # }
     
     range.plot.x <- abs(axis.limits[3] - axis.limits[1])
     range.plot.y <- abs(axis.limits[2] - axis.limits[4])
@@ -403,11 +399,12 @@ server <- shinyServer(function(input, output, session) {
     session$sendCustomMessage("clear_poly", "Clear polygon")
   })
   
-  observeEvent( input$transformSelected, {
-    show_modal_spinner(spin="fading-circle", text = "Updating")
-    plot_mode$trans <- input$transformSelected
-    
-  })
+  # TODO DELETE
+  # observeEvent( input$transformSelected, {
+  #   show_modal_spinner(spin="fading-circle", text = "Updating")
+  #   plot_mode$trans <- input$transformSelected
+  #   
+  # })
   
   observeEvent( input$save, {
     ctx <- getCtx(session)
@@ -509,14 +506,47 @@ get_data <- function( session ){
     names(df) <- c(chnames[1], "rowId")
   }
   
+  
+  wkf <- ctx$workflow
+  stps <- wkf$steps
+
+  current_step <- Find(function(p) identical(p$id, ctx$stepId), stps)
+
+  y_data_name <- current_step$model$axis$xyAxis[[1]]$yAxis$graphicalFactor$factor$name
+  
+  
+  prev_step_idx <- which( unlist( lapply( unlist(stps), function(x){
+    tryCatch({
+      return(y_data_name %in% unlist(x$computedRelation$joinOperators[[1]]$rightRelation$outNames))
+    }, error=function(cond){
+      return(FALSE)  
+    })
+  })))
+  
+  prev_step <- stps[[prev_step_idx]]
+  op_repo <- prev_step$model$operatorSettings$operatorRef$url$uri
+  
+  data_trans <- 'linear'
+  if( grepl( "biexponential_transform", op_repo, fixed = TRUE) ){
+    data_trans <- 'biexp'
+  }
+  
+  if( grepl( "logicle_transform", op_repo, fixed = TRUE) ){
+    data_trans <- 'logicle'
+  }
+  
+  if( grepl( "log_transform", op_repo, fixed = TRUE) ){
+    data_trans <- 'log'
+  }
+  
 
   progress$close()
   # remove_modal_spinner()
   
-  return( list(df, data_mode))
+  return( list(df, data_mode, data_trans))
   
 }
-
+#5c94e6bc3d934d0d2a245d410e02e701
 
 getMode <- function(session){
   # retreive url query parameters provided by tercen

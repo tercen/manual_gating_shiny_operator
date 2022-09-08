@@ -1,46 +1,29 @@
-# Manual Gating Shiny Operator
+# manual gating shiny operator
 
-### Roadmap
+#### Description
 
-#### To 0.1.0
-* <del>Add biexponential scaling</del>
-* <del>Show saved gate when opening the operator again</del>
-* <del>Selection Accuracy Improvement</del>
+`manual gating` shiny operator is a graphic, interactive operator that allow manually drawing polygonal gates
+in 1d and 2d FCS data.
 
-#### To 0.2.0
-* <del>1d Gating</del>
-* <del>Quadrant gating</del>
-* <del>Add log scaling</del>
-* <del>Change input mapping to gather</del>
+##### Usage
 
-#### To 0.3.0
-* <del>Overall plot consistency</del>
-* <del>Ellipsoid gating</del>
-* <del>Placement of cell selection percentage</del>
-* <del>Spider gating</del>
-
-#### To 0.4.0
-* Move transforms out of the operator
-* Change how flags are saved [+,-], single column for each - 1d and quadrant
-* Flag column names should come from a parameter set by the user
-* Add margins to the axes
-* Color dots by an optional 'color' column [flag or continuous]
+Input projection |.
+---|---
+`row`   | represents the variables (e.g. genes, channels, markers)
+`col`   | represents the observations (e.g. cells, samples, individuals) 
+`y-axis`| measurement value
+`color` | Value used to color the data-points (e.g. previous classification flag)
 
 
-#### Unscheduled 
-* Create an update mode (read polygon info and update it)
-* Add support for multiple polygonal gates on same plot
+Output relations|.
+---|---
+`FLAGID_NegNeg, FLAGID_NegPos, ..., `| Boolean [0 or 1] indicating gate membership.
+
+`FLAGID` is a string defined by the used in the operator UI.
+
+##### See Also
+
+[Automated gating operator](https://github.com/tercen/automated_gating_operator)
 
 
 
-#### Known Bugs / Limitations
-* Points lying on the edge of the axis are invisible to the user and might no be selected
-* Plot ticks in the 1d are not always appearing (depends on data range)
-* <del>Loading modal dialogue does not start with page load <del>Now just show a GIF and hide the buttons while it waits for the connection to the Shiny server</del>
-* <del>The operator currently outputs the input mapping. The JoinOperator needs to be fixed, otherwise it tries to add all flag values to each input entry</del>
-* <del>Trying to save the gate before drawing is currently allowed and causes an error</del>
-* <del>Axis appearance is different between linear and biexponential plots</del>
-
-#### Deprecated requirements
-* Logicle transform is unstable, crashing on certain data. [No more transforms]
-* Plot parameters are currently hard-coded and fixed. [No more transforms]

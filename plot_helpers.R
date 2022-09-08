@@ -59,13 +59,13 @@ create_plot_1d <- function( data, trans ){
 
     breaks.x <- seq(min(xt), max(xt), by=rd/5 )
     breaks.x.t <-  break_transform(breaks = breaks.x, 
-                                 transformation = trans_name)
+                                 transformation = "biexp")
     
     # Data range is too narrow to sensibly display at the log scale if there is
     # 1 or 0 ticks
     fac <- 5
     mfac <- max(xt)
-    while( mfac < 5 * 10^fac && fac > 2){ 
+    while( mfac < 5 * 10^fac && fac > -3){ 
       fac <- fac - 1
     }
     fac <- fac - 1
@@ -398,6 +398,7 @@ get_axis_plot_lims <- function( imgfile ){
 }
 
 nearest_factor10 <- function( num, label=TRUE, factor=4){
+  
   neg_fac <- 1
   if(num<0){
     neg_fac <- -1

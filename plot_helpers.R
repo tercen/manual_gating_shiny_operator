@@ -176,9 +176,10 @@ create_plot_2d <- function( data, trans  ){
 
     # paste0(tempfile(), '.png') #
     imgfile <-   paste0(tempfile(), '.png') #'/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
+    t_data <- tibble( data[,1], data[, 2])
     p <- ggplot() +
       geom_scattermost(
-        as.matrix(data),
+        as.matrix( t_data ),
         pointsize=1.5,
         col=colors,
         pixels=c(600,600)) +
@@ -281,6 +282,7 @@ create_plot_2d <- function( data, trans  ){
     }
     
     imgfile <-  paste0(tempfile(), '.png')
+    t_data <- tibble( data[,1], data[, 2])
     
     p <- ggplot() +
       scale_x_continuous(limits = c( min(b_data$.x), max(b_data$.x) ),
@@ -295,9 +297,14 @@ create_plot_2d <- function( data, trans  ){
                          # trans = custom_scale,
                          labels = labs_y,
                          sec.axis = dup_axis(labels = c())) +
-      geom_scattermore(
-        data=b_data,
-        mapping=aes(x=.x, y=.y),
+      # geom_scattermore(
+      #   data=t_data,
+      #   mapping=aes(x=.x, y=.y),
+      #   pointsize=1.5,
+      #   col=colors,
+      #   pixels=c(600,600)) +
+      geom_scattermost(
+        data.matrix(t_data),
         pointsize=1.5,
         col=colors,
         pixels=c(600,600)) +

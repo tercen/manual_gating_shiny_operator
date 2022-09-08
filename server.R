@@ -33,6 +33,11 @@ library(Rcpp)
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/a3580d65-a077-4864-ace5-27716cc2dc55
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
 # options("tercen.stepId"= "a3580d65-a077-4864-ace5-27716cc2dc55")
+
+# http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/accfd52a-e2dd-47d8-9ede-15beaa23e034
+# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+# options("tercen.stepId"= "accfd52a-e2dd-47d8-9ede-15beaa23e034")
+
 server <- shinyServer(function(input, output, session) {
 
   source('plot_helpers.R')
@@ -451,7 +456,8 @@ get_data <- function( session ){
       mutate( .ci = seq(0,nrow(.)-1) )
     
     chnames <- unname(as.list(ctx$rselect()))[[1]]
-    
+    colnames <- unname(as.list(ctx$cnames))[[1]]
+    # browser()
     tmp_df <- ctx$select( list(".y", ".ri", ".ci") )  %>%
       dplyr::left_join(., col_df, by=".ci")
     df <- data.frame( 
@@ -463,9 +469,10 @@ get_data <- function( session ){
         dplyr::select(.y),
       rowid = tmp_df %>% 
         dplyr::filter(.ri == 1) %>% 
-        dplyr::select(rowId))
+        dplyr::select(colnames))
     
     names(df) <- c(chnames[1], chnames[2], "rowId")
+    
   }
   
   if( nrow(ctx$rselect()) == 1 ){
@@ -475,6 +482,7 @@ get_data <- function( session ){
       mutate( .ci = seq(0,nrow(.)-1) )
     
     chnames <- unname(as.list(ctx$rselect()))[[1]]
+    colnames <- unname(as.list(ctx$cnames))[[1]]
     
     
     tmp_df <- ctx$select( list(".y", ".ri", ".ci") )  %>%
@@ -485,9 +493,11 @@ get_data <- function( session ){
         dplyr::select(.y),
       rowid = tmp_df %>% 
         dplyr::filter(.ri == 0) %>% 
-        dplyr::select(rowId))
+        dplyr::select(colnames))
     
     names(df) <- c(chnames[1], "rowId")
+    
+    
   }
   
   # Run into permission issues, it seems...
@@ -541,12 +551,13 @@ get_data <- function( session ){
     cols <- NULL
   }else{
     col_df <- ctx$select(c(".ci", ".ri", cols[[1]]))
-    unique_cols <- unname(unlist(unique(col_df[,3])))
+    colors <- unname(unlist((col_df[,3])))
+    
     
     pallete <- colorRampPalette(c("#7b3294","#c2a5cf", "#A7A7A7","#a6dba0", "#008837"))(256)  
     
     df <- df %>%
-      mutate(color = pallete[cut(col_df$.ci[col_df$.ri==0], 256)])
+      mutate(color = pallete[cut(colors[col_df$.ri==0], 256)])
  
   }
  

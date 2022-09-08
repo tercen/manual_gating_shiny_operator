@@ -399,7 +399,7 @@ server <- shinyServer(function(input, output, session) {
     flag_vec <- as.numeric(selected$flag)
     pref <- input$gateFlagPref
     
-    flags <- tibble("{pref}"=flag_vec) 
+    flags <- tibble("{pref}":=flag_vec) 
     
     coords.type <- input$polygon$type 
     if( coords.type == 'line'){

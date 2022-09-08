@@ -17,6 +17,6 @@
         "Log",
         "Logicle"
       ],
-      "description": "Name of the gating function."
+      "description": "Transformation used on the data. Only relevant for plot tick placement."
     }]
 }

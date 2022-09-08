@@ -4,5 +4,19 @@
   "tags": ["Cytometry", "Gating"],
   "authors": ["tercen", "thiago"],
   "urls": ["https://github.com/tercen/manual_gating_shiny_operator"],
-  "isViewOnly": false
+  "isViewOnly": false,
+  "urls": ["https://github.com/tercen/opencyto_operator"],
+  "properties": [ 
+    {
+      "kind": "EnumeratedProperty",
+      "name": "Data transform",
+      "defaultValue": "Linear",
+      "values": [
+        "Linear",
+        "Biexponential",
+        "Log",
+        "Logicle"
+      ],
+      "description": "Name of the gating function."
+    }]
 }

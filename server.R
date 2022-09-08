@@ -490,45 +490,56 @@ get_data <- function( session ){
     names(df) <- c(chnames[1], "rowId")
   }
   
-  
-  wkf <- ctx$workflow
-  stps <- wkf$steps
-
-  current_step <- Find(function(p) identical(p$id, ctx$stepId), stps)
-
-  y_data_name <- current_step$model$axis$xyAxis[[1]]$yAxis$graphicalFactor$factor$name
-  
-  
-  prev_step_idx <- which( unlist( lapply( unlist(stps), function(x){
-    tryCatch({
-      return(y_data_name %in% unlist(x$computedRelation$joinOperators[[1]]$rightRelation$outNames))
-    }, error=function(cond){
-      return(FALSE)  
-    })
-  })))
-  
-  prev_step <- stps[[prev_step_idx]]
-  op_repo <- prev_step$model$operatorSettings$operatorRef$url$uri
-  
-  data_trans <- 'linear'
-  if( grepl( "biexponential_transform", op_repo, fixed = TRUE) ){
+  # Run into permission issues, it seems...
+  # browser()
+  #Data transform
+  trans <- ctx$op.value("Data transform")
+  # wkf <- ctx$workflow
+  # stps <- wkf$steps
+  # 
+  # current_step <- Find(function(p) identical(p$id, ctx$stepId), stps)
+  # 
+  # y_data_name <- current_step$model$axis$xyAxis[[1]]$yAxis$graphicalFactor$factor$name
+  # 
+  # 
+  # prev_step_idx <- which( unlist( lapply( unlist(stps), function(x){
+  #   tryCatch({
+  #     return(y_data_name %in% unlist(x$computedRelation$joinOperators[[1]]$rightRelation$outNames))
+  #   }, error=function(cond){
+  #     return(FALSE)  
+  #   })
+  # })))
+  # 
+  # prev_step <- stps[[prev_step_idx]]
+  # op_repo <- prev_step$model$operatorSettings$operatorRef$url$uri
+  if( is.null(trans) || trans == 'Linear' ){
+    data_trans <- 'linear'  
+  }else if( trans == 'Biexponential'){
     data_trans <- 'biexp'
-  }
-  
-  if( grepl( "logicle_transform", op_repo, fixed = TRUE) ){
+  }else if( trans == 'Log'){
+    data_trans <- 'log'
+  }else if( trans == 'Logicle'){
     data_trans <- 'logicle'
   }
   
-  if( grepl( "log_transform", op_repo, fixed = TRUE) ){
-    data_trans <- 'log'
-  }
+  
+  # if( grepl( "biexponential_transform", op_repo, fixed = TRUE) ){
+  #   data_trans <- 'biexp'
+  # }
+  # 
+  # if( grepl( "logicle_transform", op_repo, fixed = TRUE) ){
+  #   data_trans <- 'logicle'
+  # }
+  # 
+  # if( grepl( "log_transform", op_repo, fixed = TRUE) ){
+  #   data_trans <- 'log'
+  # }
   
   cols <- ctx$colors
   
   if( length(cols) == 0){
     cols <- NULL
   }else{
-    # TODO See what colors look like
     col_df <- ctx$select(c(".ci", ".ri", cols[[1]]))
     unique_cols <- unname(unlist(unique(col_df[,3])))
     

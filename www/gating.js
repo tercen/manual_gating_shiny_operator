@@ -14,7 +14,9 @@ var axis_bounds = [-1, -1, -1, -1];
 var is_dragging = false;
 var drag_idx = -1;
 
-
+// =====================================================
+// Render gate functions
+// =====================================================
 function add_poly_dot(ctx, coord){
   ctx.beginPath();
   ctx.fillStyle = rgbToHex(0, 0, 0);
@@ -96,21 +98,14 @@ function render_ellipsoid(canvas, points) {
       // Center dot
       add_poly_dot(ctx, center);
 
-      
-      
       ctx.lineWidth = 3;
       for (let i = 1; i <= 2; i++) {
         add_poly_dot(ctx, points[i]);
-        //ctx.beginPath();
-        //ctx.fillStyle = rgbToHex(255, 255, 255);
-        //ctx.arc(points[i].x, points[i].y, 3, 0, Math.PI * 2, true);
-        //ctx.closePath();
-        //ctx.fill();
       }
       
       
       ctx.restore();
-} // END OF render
+} // END OF render_ellipsoid
 
 
 function render_quadrant(canvas, center, bounds) {
@@ -143,33 +138,21 @@ function rgbToHex(r, g, b) {
   return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
+// -----------------------------------------------------
+// END OF Render gate functions
+// -----------------------------------------------------
 
 
-
-// DEPRECATED: Remove later
-$(document).on('shiny:value', function(event) {
-  if (event.target.id === 'image_div') {
-    if( parseInt(current_draw,10) === 0){
-      current_draw = current_draw + 1
-    }else{
-      Shiny.setInputValue('pageLoaded', Math.random());
-    }
-    
-    
-  }
-});
-
+// Control events to remove the 'Loading' modal
 $(document).on('shiny:sessioninitialized', function(event) {
-  
   Shiny.setInputValue('pageLoaded', Math.random());
 });
 
 $(document).on('shiny:connected', function(event) {
   Shiny.setInputValue('connected', Math.random());
-  
-  
-  
 });
+
+
 
 function save_gate(){
   if( isSaveEnabled == false ){
@@ -179,26 +162,17 @@ function save_gate(){
   var canvas = document.getElementById('gate_canvas');
   hide_all_btn();
   Shiny.setInputValue('save', canvas.toDataURL()); // Ask server to save 
-  
-  
-  //document.getElementById('tool_label').innerHTML = "Manual Gating (View Mode)";
 }
-
 
 
 function select_button(objId){
   clear_poly();
-  
 
-  
   if( objId != -1){
     let btn = document.getElementById(objId);
-    //alert( objId + ' - ' + btn);
     let div = btn.parentElement;
     let grp = btn.getAttribute("data-group");
-    
-    
-    
+
     if( currentButton.length > 0 ){
       
       let oldBtnId = get_active_button_id( grp );
@@ -213,32 +187,28 @@ function select_button(objId){
       }
       
 
-      }
+    }
     
-      update_active_button_list(objId, grp);
+    update_active_button_list(objId, grp);
 
-      btn.classList.add('btn-active');
+    btn.classList.add('btn-active');
     
+    if( objId == 'polyDrawBtn'){
+      currentMode = 'polyDraw';
+    }
     
-      //currentButton = objId;
-      
-      if( objId == 'polyDrawBtn'){
-        currentMode = 'polyDraw';
-      }
-      
-      if( objId == 'quadDrawBtn'){
-        currentMode = 'quadDraw';
-      }
-      
-      if( objId == 'circDrawBtn'){
-        currentMode = 'circDraw';
-      }
-      
-      if( objId == 'lineDrawBtn'){
-        currentMode = 'lineDraw';
-      }
+    if( objId == 'quadDrawBtn'){
+      currentMode = 'quadDraw';
+    }
+    
+    if( objId == 'circDrawBtn'){
+      currentMode = 'circDraw';
+    }
+    
+    if( objId == 'lineDrawBtn'){
+      currentMode = 'lineDraw';
+    }
   }
-    
 }
 
 function get_active_button_id( btnGrp ){
@@ -256,8 +226,6 @@ function get_active_button_id( btnGrp ){
 }
 
 function update_active_button_list( btnId, btnGrp ) {
-  //currentButton = [];
-  //currentGroup = [];
   if( currentGroup.length == 0){
     currentButton.push(btnId);
     currentGroup.push(btnGrp);
@@ -308,24 +276,17 @@ function hide_all_btn(){
   document.getElementById('lineDrawBtn').style = 'visibility:hidden; display: none;';
 }
 
-Shiny.addCustomMessageHandler('setViewOnly', function(ignore){
-  hide_all_btn();
-  
-  document.getElementById('tool_label').innerHTML = "Manual Gating (View Mode)";
-})
 
-Shiny.addCustomMessageHandler('set_data_mode', function(data_mode){
-
-  if(data_mode == '1d'){
-    document.getElementById('polyDrawBtn').style = 'visibility:hidden; display:none';
-    document.getElementById('quadDrawBtn').style = 'visibility:hidden; display:none';
-    document.getElementById('circDrawBtn').style = 'visibility:hidden; display:none';
-    document.getElementById('lineDrawBtn').style = 'visibility:visible; display:inline';
+function enable_save( enb ){
+  if( enb === true){
+    document.getElementById("saveDisabledDiv").style = 'opacity:100%;';  
+    isSaveEnabled = true;
+  }else{
+    document.getElementById("saveDisabledDiv").style = 'opacity:25%;';  
+    isSaveEnabled = false;
   }
   
-  
-})
-
+}
 
 // =========================================================
 // Show selected % after the polygon is closed
@@ -381,13 +342,23 @@ Shiny.addCustomMessageHandler('flag_info', function(flag_info){
     
   }
   
-
-
   ctx.restore();
-  
-  
 })
 
+Shiny.addCustomMessageHandler('setViewOnly', function(ignore){
+  hide_all_btn();
+  
+  document.getElementById('tool_label').innerHTML = "Manual Gating (View Mode)";
+})
+
+Shiny.addCustomMessageHandler('set_data_mode', function(data_mode){
+  if(data_mode == '1d'){
+    document.getElementById('polyDrawBtn').style = 'visibility:hidden; display:none';
+    document.getElementById('quadDrawBtn').style = 'visibility:hidden; display:none';
+    document.getElementById('circDrawBtn').style = 'visibility:hidden; display:none';
+    document.getElementById('lineDrawBtn').style = 'visibility:visible; display:inline';
+  }
+})
 
 Shiny.addCustomMessageHandler('axis_bounds', function(bounds){
   axis_bounds = bounds;
@@ -399,20 +370,9 @@ Shiny.addCustomMessageHandler('axis_bounds', function(bounds){
   document.getElementById('polyDrawBtnImg').style = 'visibility:visible';
   document.getElementById('quadDrawBtnImg').style = 'visibility:visible';
   document.getElementById('circDrawBtnImg').style = 'visibility:visible';
-
-  
 })
 
-function enable_save( enb ){
-  if( enb === true){
-    document.getElementById("saveDisabledDiv").style = 'opacity:100%;';  
-    isSaveEnabled = true;
-  }else{
-    document.getElementById("saveDisabledDiv").style = 'opacity:25%;';  
-    isSaveEnabled = false;
-  }
-  
-}
+
 
 Shiny.addCustomMessageHandler('image_loaded', function(msg){
   var channel_image = document.getElementById('channel_image');
@@ -462,8 +422,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
       }
     }
     
-            
-  
+
 
     if( isPolygonClosed == false && is_dragging ==  false){ // Add new points
       if(currentMode == 'polyDraw'){
@@ -657,29 +616,8 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
         
         render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,5) );
       }
-      /* rotationvar radians = (Math.PI / 180) * 0.2;
-                                            
-                                            if(dy > 0 && startX > cx){
-                                              radians *= -1;
-                                            }
-                                            
-                                            if(dy < 0 && startX < cx){
-                                              radians *= -1;
-                                            }
-                   
-                                            var cos = Math.cos(radians);
-                                            var sin = Math.sin(radians);
-                                            
-                                            
-                                            
-                                            globalThis.grid.forEach(el => {
-                                                el.x = (cos * (el.x - cx)) + (sin * (el.y - cy)) + cx;
-                                                el.y = (cos * (el.y - cy)) - (sin * (el.x - cx)) + cy;
-                                            })
-      */
-      
+
     }
-    
     
   }
   

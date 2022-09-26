@@ -185,10 +185,10 @@ create_plot_2d <- function( data, trans  ){
         pixels=c(600,600)) +
       labs(x=lab_names[1], y=lab_names[2])  +
       scale_y_continuous(breaks = yticks,
-                         expand=c(0,0),
+                         expand=c(0.03,0.03),
                          labels = ytick_labels) +
       scale_x_continuous(breaks = xticks,
-                         expand=c(0,0),
+                         expand=c(0.03,0.03),
                          labels = xtick_labels) +
       theme(panel.background = element_rect(fill = 'white', colour = 'white'),
             axis.line.x=element_line(color="#07070F" ),

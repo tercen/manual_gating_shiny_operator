@@ -38,6 +38,10 @@ library(Rcpp)
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
 # options("tercen.stepId"= "accfd52a-e2dd-47d8-9ede-15beaa23e034")
 
+#http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/c9f9c606-38bc-4284-940b-dd06dfe63ce5
+# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+# options("tercen.stepId"= "c9f9c606-38bc-4284-940b-dd06dfe63ce5")
+
 server <- shinyServer(function(input, output, session) {
 
   source('plot_helpers.R')
@@ -60,11 +64,7 @@ server <- shinyServer(function(input, output, session) {
   output$image_div <- renderImage({
     query = parseQueryString(session$clientData$url_search)
     op_mode <- query[["mode"]]
-    # op_mode <- 'run'
-    
-    ## Map densities to colors (VIRIDIS)
-    
-    
+
     if( is.null(op_mode) || op_mode == "run"){
       tmp <-get_data(session)
       
@@ -109,6 +109,8 @@ server <- shinyServer(function(input, output, session) {
     
     image$loaded <- runif(1)
     
+    # Send the plot bounds to the Client, which uses them to draw
+    # quadrant gates
     session$sendCustomMessage("axis_bounds",append(image$plot_lim_x, image$plot_lim_y ) )
     
     
@@ -116,7 +118,7 @@ server <- shinyServer(function(input, output, session) {
          id = "channel_image",
          contentType = 'image/png',
          alt = "Scatter plot failed to load.",
-         width = "100%", height = "450")
+         width = "100%", height = "600")
   }, deleteFile = FALSE)
   
   
@@ -130,7 +132,7 @@ server <- shinyServer(function(input, output, session) {
                      image$plot_lim_x[2],
                      image$plot_lim_y[1])
     
-    
+    plot_margin <- 0.03
     coords.x <- unlist(lapply( input$polygon$coords, function(x) x$x ))
     coords.y <- unlist(lapply( input$polygon$coords, function(x) x$y ))
     
@@ -155,8 +157,8 @@ server <- shinyServer(function(input, output, session) {
     range.plot.y <- abs(axis.limits[2] - axis.limits[4])
     
     # browser()
-    coords.x <- (coords.x- axis.limits[1])/range.plot.x 
-    coords.y <- ((coords.y - axis.limits[4])/range.plot.y)
+    coords.x <- (coords.x- axis.limits[1])/range.plot.x - plot_margin
+    coords.y <- ((coords.y - axis.limits[4])/range.plot.y) + plot_margin
     
     coords.poly.x <- unlist(lapply( coords.x, function(x){
       get_converted_scale( x, image$breaks_x, image$breaks_x_rel )
@@ -209,9 +211,9 @@ server <- shinyServer(function(input, output, session) {
       
 
       flag[flag>0] <- 1
-
-      # point_cloud <- point_cloud %>%
-      #   mutate(flag = flag)
+      
+      t_data_in <- tibble(point_cloud$x[flag==1], point_cloud$y[flag==1])
+      t_data_out <- tibble(point_cloud$x[flag==0], point_cloud$y[flag==0])
 
       poly.px.x <-append( poly.px.x, list(((coords.x[1:(length(coords.x)-1)])*range.plot.x)+image$plot_lim_x[1]*0.97))
       poly.px.y <-append( poly.px.y, list(((coords.y[1:(length(coords.y)-1)])*range.plot.y)+image$plot_lim_y[1]))
@@ -284,20 +286,15 @@ server <- shinyServer(function(input, output, session) {
       flag.bottom.left[flag.bottom.left >= 1] <- 1
       flag.bottom.right[flag.bottom.right >= 1] <- 1
       
+   
+      
+      
       # flag is used to plot percentages in the UI
       flag <- flag.top.left +
         flag.top.right*2 +
         flag.bottom.left*3 +
         flag.bottom.right*4
 
-      # pref <- input$gateFlagPref
-      # 
-      # point_cloud <- point_cloud %>%
-      #   mutate("{pref}_NegNeg" := flag.bottom.left)  %>%
-      #   mutate("{pref}_PosNeg" := flag.bottom.right)  %>%
-      #   mutate("{pref}_NegPos" := flag.top.left)  %>%
-      #   mutate("{pref}_PosPos" := flag.top.right)  
-      
 
     }
     
@@ -358,9 +355,12 @@ server <- shinyServer(function(input, output, session) {
                               ))
   })
   
+  
+  
   observeEvent( input$pageLoaded, {
     session$sendCustomMessage("image_loaded", "Image has been loaded")
   })
+  
   
   observeEvent( input$connected, {
     show_modal_spinner(spin="fading-circle", text = "Loading")
@@ -371,20 +371,8 @@ server <- shinyServer(function(input, output, session) {
   })
   
 
-  observeEvent( input$clearBtn, {
-    session$sendCustomMessage("clear_poly", "Clear polygon")
-  })
-  
-  # TODO DELETE
-  # observeEvent( input$transformSelected, {
-  #   show_modal_spinner(spin="fading-circle", text = "Updating")
-  #   plot_mode$trans <- input$transformSelected
-  #   
-  # })
-  
   observeEvent( input$save, {
     ctx <- getCtx(session)
-    # Check the barplot operator --> Do the result plot
     show_modal_spinner(spin="fading-circle", text = "Saving")
 
     fout <- paste0( tempfile(), ".png")
@@ -417,6 +405,7 @@ server <- shinyServer(function(input, output, session) {
         mutate("{pref}_PosNeg" := ifelse(flag_vec==4, 1, 0)   )  %>%
         mutate("{pref}_NegPos" := ifelse(flag_vec==1, 1, 0)   )  %>%
         mutate("{pref}_PosPos" := ifelse(flag_vec==2, 1, 0)   )  
+      
     }
     
 
@@ -447,7 +436,9 @@ get_data <- function( session ){
   
   data_mode <- NULL
   
-  if( nrow(ctx$rselect()) == 2 ){
+  rdata <- ctx$rselect()
+  rdata_rows <- nrow(rdata)
+  if( rdata_rows == 2 ){
     data_mode <- "2d"  
     # NOTE
     # If the column will always be rowId, then this step is unnecessary
@@ -455,11 +446,12 @@ get_data <- function( session ){
     col_df <- ctx$cselect() %>%
       mutate( .ci = seq(0,nrow(.)-1) )
     
-    chnames <- unname(as.list(ctx$rselect()))[[1]]
-    colnames <- unname(as.list(ctx$cnames))[[1]]
-    # browser()
+    chnames <- unname(as.list(rdata))[[1]]
+    cnames <- unname(as.list(ctx$cnames))[[1]]
+
     tmp_df <- ctx$select( list(".y", ".ri", ".ci") )  %>%
       dplyr::left_join(., col_df, by=".ci")
+    
     df <- data.frame( 
       x = tmp_df %>% 
         dplyr::filter( .ri == 0) %>% 
@@ -469,20 +461,19 @@ get_data <- function( session ){
         dplyr::select(.y),
       rowid = tmp_df %>% 
         dplyr::filter(.ri == 1) %>% 
-        dplyr::select(colnames))
+        dplyr::select(all_of(cnames)))
     
     names(df) <- c(chnames[1], chnames[2], "rowId")
-    
   }
   
-  if( nrow(ctx$rselect()) == 1 ){
+  if( rdata_rows == 1 ){
     data_mode <- "1d"  
     
     col_df <- ctx$cselect() %>%
       mutate( .ci = seq(0,nrow(.)-1) )
     
-    chnames <- unname(as.list(ctx$rselect()))[[1]]
-    colnames <- unname(as.list(ctx$cnames))[[1]]
+    chnames <- unname(as.list(rdata))[[1]]
+    cnames <- unname(as.list(ctx$cnames))[[1]]
     
     
     tmp_df <- ctx$select( list(".y", ".ri", ".ci") )  %>%
@@ -493,35 +484,14 @@ get_data <- function( session ){
         dplyr::select(.y),
       rowid = tmp_df %>% 
         dplyr::filter(.ri == 0) %>% 
-        dplyr::select(colnames))
+        dplyr::select(all_of(cnames)))
     
     names(df) <- c(chnames[1], "rowId")
-    
-    
   }
   
-  # Run into permission issues, it seems...
-  # browser()
   #Data transform
   trans <- ctx$op.value("Data transform")
-  # wkf <- ctx$workflow
-  # stps <- wkf$steps
-  # 
-  # current_step <- Find(function(p) identical(p$id, ctx$stepId), stps)
-  # 
-  # y_data_name <- current_step$model$axis$xyAxis[[1]]$yAxis$graphicalFactor$factor$name
-  # 
-  # 
-  # prev_step_idx <- which( unlist( lapply( unlist(stps), function(x){
-  #   tryCatch({
-  #     return(y_data_name %in% unlist(x$computedRelation$joinOperators[[1]]$rightRelation$outNames))
-  #   }, error=function(cond){
-  #     return(FALSE)  
-  #   })
-  # })))
-  # 
-  # prev_step <- stps[[prev_step_idx]]
-  # op_repo <- prev_step$model$operatorSettings$operatorRef$url$uri
+
   if( is.null(trans) || trans == 'Linear' ){
     data_trans <- 'linear'  
   }else if( trans == 'Biexponential'){
@@ -531,19 +501,6 @@ get_data <- function( session ){
   }else if( trans == 'Logicle'){
     data_trans <- 'logicle'
   }
-  
-  
-  # if( grepl( "biexponential_transform", op_repo, fixed = TRUE) ){
-  #   data_trans <- 'biexp'
-  # }
-  # 
-  # if( grepl( "logicle_transform", op_repo, fixed = TRUE) ){
-  #   data_trans <- 'logicle'
-  # }
-  # 
-  # if( grepl( "log_transform", op_repo, fixed = TRUE) ){
-  #   data_trans <- 'log'
-  # }
   
   cols <- ctx$colors
   
@@ -560,13 +517,9 @@ get_data <- function( session ){
       mutate(color = pallete[cut(colors[col_df$.ri==0], 256)])
  
   }
- 
-  
 
   progress$close()
-  # remove_modal_spinner()
-  
-  
+
   
   return( list(df, data_mode, data_trans))
   

@@ -138,12 +138,11 @@ create_plot_2d <- function( data, trans  ){
     colors <- data$color
   }else{
     x <- densCols(unlist(data[,1]), unlist(data[,2]), colramp=colorRampPalette(c("black", "white")),
-                  nbin=256)
+                  nbin=128)
     dens <- col2rgb(x)[1,] + 1L
     
     colors <- cols[dens]  
   }
-  
   
 
   if( trans == 'linear'){
@@ -200,8 +199,7 @@ create_plot_2d <- function( data, trans  ){
 
     # browser()
     pb <- ggplot_build(p)
-    # range_x <- pb$layout$panel_params[[1]]$x.range
-    # range_y <- pb$layout$panel_params[[1]]$y.range
+
     range_x <- pb$layout$panel_params[[1]]$x.sec$get_limits()
     range_y <- pb$layout$panel_params[[1]]$y.sec$get_limits()
 
@@ -333,7 +331,7 @@ create_plot_2d <- function( data, trans  ){
     breaks_y.rel <-append(append(0, pb$layout$panel_params[[1]]$y.sec$break_info$major), 1)
   }
 
-  ggsave(imgfile, units='px', width=600, height=600, p )
+  ggsave(imgfile, units='px', width=600, height=600, device='png', p )
 
 
   lims <- get_axis_plot_lims(imgfile)

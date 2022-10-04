@@ -5,6 +5,8 @@ library(shinycssloaders)
 
 library(shinybusy)
 
+library(spsComps)
+
 shinyUI(
   
   fixedPage(

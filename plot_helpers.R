@@ -5,19 +5,23 @@ create_plot_1d <- function( data, trans , gate_coords=NULL , gate_type=NULL, gat
   imgfile <-  paste0(tempfile(), '.png')
   lab_names <- names(data)
   
-  if( trans == 'linear'){
-    xlim <- c(min(xt), max(xt*1.1))
-    if( xlim[2] < 1.5e5){
-      xticks <- seq( xlim[1], xlim[2], by=1e4 )
-      fac<-3
-    }else{
-      xticks <- seq( xlim[1], xlim[2], by=5e4 )
-      fac<-4
-    }
+  xlim <- c(min(xt), max(xt))
+  
+  xs <- (xlim[2] - xlim[1])/5
+  xticks <- seq( xlim[1], xlim[2], by=xs )
 
-    xtick_labels <- unlist(lapply(xticks, function(x) get_breaks(x, label = TRUE, factor=fac)))
+  if( trans == 'linear'){
+    # if( xlim[2] < 1.5e5){
+    #   xticks <- seq( xlim[1], xlim[2], by=1e4 )
+    #   fac<-3
+    # }else{
+    #   xticks <- seq( xlim[1], xlim[2], by=5e4 )
+    #   fac<-4
+    # }
+
+    xtick_labels <- get_breaks(xticks, label=TRUE)# unlist(lapply(xticks, function(x) get_breaks(x, label = TRUE, factor=fac)))
     
-    xticks <- unlist(lapply( xticks, function(x) get_breaks(x, FALSE, fac)))
+    xticks <- get_breaks(xticks, label=FALSE) #unlist(lapply( xticks, function(x) get_breaks(x, FALSE, fac)))
     
     p <- ggplot( 
       data=data.frame(x=xt),
@@ -51,11 +55,7 @@ create_plot_1d <- function( data, trans , gate_coords=NULL , gate_type=NULL, gat
   }
   
   if( trans %in% c('biexp','logicle', 'log')){
-    xt <- data[,1]
-    
-    rd <- max(xt)-min(xt)
-
-    breaks.x <- seq(min(xt), max(xt), by=rd/5 )
+    breaks.x <- xticks
     breaks.x.t <-  break_transform(breaks = breaks.x, 
                                  transformation = "biexp")
     
@@ -550,6 +550,7 @@ get_breaks <- function( num_list, label=TRUE){
   
   
   breaks <- c()
+  # browser()
   for( num in num_list ){
     if( ndigits < 2){
       num <- as.numeric( format(num, digits=ndigits+1), scientif=FALSE )

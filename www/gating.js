@@ -148,7 +148,7 @@ function save_gate(){
     return
   }
   
-  var canvas = document.getElementById('gate_canvas');
+  //var canvas = document.getElementById('gate_canvas');
   hide_all_btn();
   Shiny.setInputValue('save', 'saved'); // Ask server to save 
 }

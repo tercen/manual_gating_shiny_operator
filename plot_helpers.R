@@ -269,6 +269,9 @@ create_plot_2d <- function( data, trans,
                                  transformation = "biexp")
 
     
+    # These two are used when drawing the gate down below (to match the linear transform names)
+    breaks.x <- breaks.x.t
+    breaks.y <- breaks.y.t
     # Data range is too narrow to sensibly display at the log scale if there is
     labs_x <- get_breaks(breaks.x.t, label = TRUE)
     labs_y <- get_breaks(breaks.y.t, label = TRUE)
@@ -316,7 +319,7 @@ create_plot_2d <- function( data, trans,
   
 
   if( !is.null(gate_coords)){
-    
+    # browser()
     if( gate_type == 'poly'){
       cx <- mean(gate_coords$x)
       cy <- mean(gate_coords$y)

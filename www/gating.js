@@ -744,6 +744,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
 $(document).on("shiny:value", function(e) {
   
   if(e.name == 'image_div'){
+    alert("Updated image div")
     e.preventDefault();
     ev = e.value;
     let img_node = document.createElement("img");

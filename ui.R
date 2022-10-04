@@ -6,7 +6,9 @@ library(shinycssloaders)
 library(shinybusy)
 
 shinyUI(
+  
   fixedPage(
+    spsDepend("shinyCatch"), # optional
   # fillPage(
     shinyjs::useShinyjs(),
 

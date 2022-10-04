@@ -20,10 +20,17 @@ library(shinybusy)
 library(base64enc)
 library(Rcpp) 
 
-
+# =====================
+# DEBUG libraries
+library(spsComps)
+library(spsUtil)
+spsOption("traceback", TRUE)
+options(show.error.locations = TRUE)
 # library(reactlog)
 # reactlog_enable()
 #reactlog_disable()
+# =====================
+
 
 source('plot_helpers.R')
 sourceCpp("polygon_test.cpp")
@@ -64,6 +71,7 @@ sourceCpp("polygon_test.cpp")
 
 
 server <- shinyServer(function(input, output, session) {
+  
   df        <- reactiveValues( data=NULL, file=NULL, files=NULL )
   selected <- reactiveValues( pct=NULL, x=NULL, y=NULL , flag=NULL   )
   
@@ -93,7 +101,15 @@ server <- shinyServer(function(input, output, session) {
   
   output$fileChooser<-renderUI({
     req(op_file$mode)
-
+    shinyCatch({
+      message(paste0("File Chooser has failed -> ", 
+                     op_file$mode
+                     ))
+      
+      
+    }, blocking_level = "error",
+               trace_back = TRUE, position="top-full-width", shiny=TRUE) 
+    
     if( !is.null(op_file$mode) && op_file$mode == "many"){
       filenames <- unname(unlist(unique( df$data['filename'])))
       
@@ -112,7 +128,13 @@ server <- shinyServer(function(input, output, session) {
   })
   
   output$image_div <- renderImage({
-    
+    shinyCatch({
+      message(paste0("renderImage has failed "
+      ))
+      
+      
+    }, blocking_level = "error",
+    trace_back = TRUE, position="top-full-width", shiny=TRUE) 
     query = parseQueryString(session$clientData$url_search)
     op_mode <- query[["mode"]]
 
@@ -893,6 +915,8 @@ create_quadrant <- function(  poly_df, x, y, coords.x, coords.y, range.plot.x, r
   
   return(list(poly.quadrant, poly.px.x, poly.px.y))
 }
+
+
 
 
 

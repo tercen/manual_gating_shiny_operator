@@ -10,86 +10,12 @@ shinyUI(
   # fillPage(
     shinyjs::useShinyjs(),
 
-    tags$head(HTML("<script type='text/javascript' src='gating.js'></script>")),
+    tags$head(
+      tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
+      tags$script(type = "text/javascript", src = "gating.js"),
+    ),
     
-    
-    tags$style(HTML('
-                .toolbar-el{
-                    margin-left:0px; 
-                    margin-right:-25px;
-                    padding:0px;
-                }
-                  
-                .btn-tool {
-                    background-color:#eff5ffff;
-                    border-style:none;
-                    margin: 0px 0px 0px 5px;
-                    padding: 0px;
-                }
-                
 
-                .btn-tool:hover {
-                    background-color:#dae8ffff;
-                    border-style:none;
-                }
-                
-
-                .btn-active {
-                    background-color:#d9e7feff;
-                    border-style:none;
-                    margin: 0px 0px 0px 5px;
-                    padding: 0px;
-                }
-                
-                .btn-active:hover {
-                    background-color:#dae8ffff;
-                    border-style:none;
-                }
-                
-                .btn-icon{
-                  height: 28px;
-                  width: 28px;
-                  margin-top: 5px;
-                  vertical-align: middle;
-                  display: block;
-                }
-                .toolbar{
-                  position:absolute; 
-                  left: 0px; 
-                  height:40px; 
-                  line-height:40px;
-                  background-color: #eff5ffff
-                }
-                
-                .separator{
-                  display:inline-block;
-                  color:#dae8ffff; 
-                  font-size:26px; 
-                  height: 28px;
-                  margin-left:0.25em;
-                  margin-right:0.25em;
-                  margin-top: 0em;
-                  padding: 0px;
-                  vertical-align: top;
-                }
-                
-                .div-btnDisable{
-                  background-color:#eff5ffff; 
-                  opacity: 25%; 
-                  display:inline-block; 
-                  height: 32px; 
-                  width: 32px;
-                }
-                
-                label{ display: table-cell; 
-                      text-align: left;
-                      vertical-align: middle; 
-                      width:140px;
-                } 
-                
-                .form-group { display: table-row;}
-                ' )),
-    
     fixedRow(
       column( 12, 
               HTML('<button type="button" id="polyDrawBtn" class="btn-tool"  data-group="draw"  title="Polygon drawing mode">
@@ -123,14 +49,27 @@ shinyUI(
               class="toolbar", 
               fixedRow(
                 column(8, tags$canvas(id="gate_canvas", style="background-color: white;" ) ),
-                column(2, 
-                       column(2, textInput("gateFlagPref", "Gate Flag Prefix", value="Marker"), style="width:340px"),
-                       style=" border-style:none; position:absolute; left:650px; width: 450px; margin-top:1.7em"),
                 column(1, 
                        imageOutput(outputId = "image_div")   ,  
-                       style = "height:5px; visibility:hidden;")
-                
+                       style = "height:5px; ") #visibility:hidden;
+              ),
+              
+              fixedRow( column(6, HTML('<span id="removedData">0 out 0 non-finite data points removed.</span>'),
+                               style="margin-left:55px; margin-top: -45px; font-style: italic; font-size: 10px; visibility: hidden")),
+              
+              
+              fixedRow(
+               column(2, textInput("gateFlagPref", "Population", value="Pop"), 
+                              class="input-row",
+                              style="top: 200%"),
+              ),
+              
+              fixedRow(
+                column(2, uiOutput("fileChooser"),
+                       class="input-row",
+                        style="top: 300%; visibility: hidden;")
               )
+              
               ) # END column(12) -- top column
       
     ) # END fiexdRow

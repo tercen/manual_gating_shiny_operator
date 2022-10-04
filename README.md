@@ -10,7 +10,8 @@ in 1d and 2d FCS data.
 Input projection |.
 ---|---
 `row`   | represents the variables (e.g. genes, channels, markers)
-`col`   | represents the observations (e.g. cells, samples, individuals) 
+`col`   | `rowId`  represents the observations (e.g. cells, samples, individuals) 
+`col`   | `filename`  represents different FCS files
 `y-axis`| measurement value
 `color` | Value used to color the data-points (e.g. previous classification flag)
 

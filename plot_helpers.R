@@ -1,7 +1,5 @@
-
-
-
-create_plot_1d <- function( data, trans ){
+# Finish up reviewing and cleaning up the code
+create_plot_1d <- function( data, trans , gate_coords=NULL , gate_type=NULL, gate_info=NULL ){
   # Create 1d density plot
   xt <- data[,1]
   imgfile <-  paste0(tempfile(), '.png')
@@ -17,9 +15,9 @@ create_plot_1d <- function( data, trans ){
       fac<-4
     }
 
-    xtick_labels <- unlist(lapply(xticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
+    xtick_labels <- unlist(lapply(xticks, function(x) get_breaks(x, label = TRUE, factor=fac)))
     
-    xticks <- unlist(lapply( xticks, function(x) nearest_factor10(x, FALSE, fac)))
+    xticks <- unlist(lapply( xticks, function(x) get_breaks(x, FALSE, fac)))
     
     p <- ggplot( 
       data=data.frame(x=xt),
@@ -70,7 +68,7 @@ create_plot_1d <- function( data, trans ){
     }
     fac <- fac - 1
     
-    labs_x <- unlist(lapply(breaks.x, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
+    labs_x <- unlist(lapply(breaks.x, function(x) get_breaks(x, label = TRUE, factor=fac)))
     if( sum(breaks.x.t >= min(xt) & breaks.x.t <= max(xt)) > 10 ){
       breaks.x <- breaks.x.t
       labs_x <- custom_tick_labels(breaks.x)
@@ -116,6 +114,31 @@ create_plot_1d <- function( data, trans ){
     breaks_y.rel <-append(append(0, pb$layout$panel_params[[1]]$y.sec$break_info$major), 1)
   }
   
+  if( !is.null(gate_coords)){
+    
+    if( gate_type == 'line'){
+      yr <-  pb$layout$panel_params[[1]]$y.sec$get_limits()
+      
+      xs <- c( gate_coords$x[4] + (gate_coords$x[2] - gate_coords$x[4])/2,
+               gate_coords$x[2] + (gate_coords$x[5] - gate_coords$x[2])/2)
+      ys <- c( yr[1] + (yr[2] - yr[1])/2, 
+               yr[1] + (yr[2] - yr[1])/2)
+
+      
+      p <- p +
+        geom_path(aes(x=gate_coords$x[c(2,3)],
+                      y=yr ), data=tibble(c(1,1)),
+                  size=0.5, color="black") +
+        geom_path(aes(x=gate_coords$x[c(2,3)],
+                      y=yr), data=tibble(c(1,1)),
+                  size=0.25, color="white") +
+        geom_label(aes(x=xs, y=ys), data=tibble(c(1,1)),
+                   label=gate_info$pct[[1]],
+                   alpha=0.5, fill="#AAAAAA",
+                   size=2, fontface="bold",
+                   label.padding = unit(0.12, "lines"))
+    }
+  }
 
   ggsave(imgfile, units='px', width=600, height=600, p )
   lims <- get_axis_plot_lims(imgfile)
@@ -126,13 +149,21 @@ create_plot_1d <- function( data, trans ){
 
 
 
-
-create_plot_2d <- function( data, trans  ){
+# x_lims and y_lims are used to keep axis ranges consistent across different files
+create_plot_2d <- function( data, trans, 
+                            xlim = NULL, ylim=NULL,
+                            gate_coords=NULL , gate_type=NULL, gate_info=NULL ){
   # Viridis pallete
   cols <-  colorRampPalette(c("#440154", "#3b528b", "#21918c", 
                               "#5ec962", "#fde725"))(256)
   lab_names <- names(data)
   
+  
+  if(nrow(data) < 50000 ){
+    point_size <- 3
+  }else{
+    point_size <- 1.5
+  }
   
   if( "color" %in% lab_names ){
     colors <- data$color
@@ -140,64 +171,61 @@ create_plot_2d <- function( data, trans  ){
     x <- densCols(unlist(data[,1]), unlist(data[,2]), colramp=colorRampPalette(c("black", "white")),
                   nbin=128)
     dens <- col2rgb(x)[1,] + 1L
-    
+
+
     colors <- cols[dens]  
   }
   
-
+  if( is.null(xlim) ){
+    xlim <- c(min(data[,1]), max(data[,1]))  
+  }
+  
+  if( is.null(ylim) ){
+    ylim <- c(min(data[,2]), max(data[,2]))
+  }
+  
+  xs <- (xlim[2] - xlim[1])/5
+  ys <- (ylim[2] - ylim[1])/5
+  
+  
+  xticks <- seq( xlim[1], xlim[2], by=xs )
+  yticks <- seq( ylim[1], ylim[2], by=ys )
+  
+  imgfile <-   paste0(tempfile(), '.png')
   if( trans == 'linear'){
-    xlim <- c(min(data[,1]), max(data[,1]*1.1))
-    ylim <- c(min(data[,2]), max(data[,2]*1.1))
 
-    if( xlim[2] < 1.5e5){
-      xticks <- seq( xlim[1], xlim[2], by=1e4 )
-      fac<-3
-    }else{
-      xticks <- seq( xlim[1], xlim[2], by=5e4 )
-      fac<-4
-    }
+    labs_x <- get_breaks(xticks, label=TRUE)
+    labs_y <- get_breaks(yticks, label=TRUE)
+    
+    breaks.x <- get_breaks(xticks, label=FALSE)
+    breaks.y <- get_breaks(yticks, label=FALSE)
+    
+     #'/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
+    # t_data <- tibble( data[,1], data[, 2])
+    
 
-
-    if( ylim[2] < 1.5e5){
-      yticks <- seq( ylim[1], ylim[2], by=1e4 )
-      fac<-3
-    }else{
-      yticks <- seq( ylim[1], ylim[2], by=5e4 )
-      fac<-4
-    }
-
-
-    xtick_labels <- unlist(lapply(xticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
-    ytick_labels <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
-
-    xticks <- unlist(lapply( xticks, function(x) nearest_factor10(x, FALSE, fac)))
-    yticks <- unlist(lapply(yticks, function(x) nearest_factor10(x, label = FALSE, factor=fac)))
-
-    # paste0(tempfile(), '.png') #
-    imgfile <-   paste0(tempfile(), '.png') #'/home/rstudio/projects/manual_gating_shiny_operator/scatter.jpeg'
-    t_data <- tibble( data[,1], data[, 2])
     p <- ggplot() +
       geom_scattermost(
-        as.matrix( t_data ),
-        pointsize=1.5,
+        as.matrix( data ),
+        pointsize=point_size,
         col=colors,
         pixels=c(600,600)) +
       labs(x=lab_names[1], y=lab_names[2])  +
-      scale_y_continuous(breaks = yticks,
+      scale_y_continuous(limits = ylim,
+                         breaks = breaks.y,
                          expand=c(0.03,0.03),
-                         labels = ytick_labels) +
-      scale_x_continuous(breaks = xticks,
+                         labels = labs_y) +
+      scale_x_continuous(limits = xlim,
+                         breaks = breaks.x,
                          expand=c(0.03,0.03),
-                         labels = xtick_labels) +
+                         labels = labs_x) +
       theme(panel.background = element_rect(fill = 'white', colour = 'white'),
-            axis.line.x=element_line(color="#07070F" ),
-            axis.line.y=element_line(color="#07070F" ),
+            axis.line=element_line(color="#07070F" ),
             text = element_text(size=6)) +
       annotate(geom = 'segment', y = Inf, yend = Inf, color ="#07070F", x = -Inf, xend = Inf, size = 1) +
       annotate(geom = 'segment', y = -Inf, yend = Inf, color = "#07070F", x = Inf, xend = Inf, size = 1)
 
 
-    # browser()
     pb <- ggplot_build(p)
 
     range_x <- pb$layout$panel_params[[1]]$x.sec$get_limits()
@@ -233,90 +261,45 @@ create_plot_2d <- function( data, trans  ){
   }
 
   if( trans %in% c('biexp','logicle', 'log')){
-    b_data <- data
-    colnames(b_data)    <- c('.x','.y')
-
-    rd.x <- max(b_data$.x)-min(b_data$.x)
-    rd.y <- max(b_data$.y)-min(b_data$.y)
-    breaks.x <- seq(min(b_data$.x), max(b_data$.x), by=rd.x/5 )
-    breaks.y <- seq(min(b_data$.y), max(b_data$.y), by=rd.y/5 )
-
-    # Density
-
-
-    breaks.x.t <-  break_transform(breaks = breaks.x,
+    # TODO 
+    # Check a data with range large enough to test if ticks are being properly placed
+    breaks.x.t <-  break_transform(breaks = xticks,
                                  transformation = "biexp")
-    breaks.y.t <-  break_transform(breaks = breaks.y,
+    breaks.y.t <-  break_transform(breaks = yticks,
                                  transformation = "biexp")
 
     
     # Data range is too narrow to sensibly display at the log scale if there is
-    # 1 or 0 ticks
-    fac <- 5
-    mfac <- max(b_data$.x)
-    while( mfac < 5 * 10^fac && fac > -3){ 
-      fac <- fac - 1
-    }
-    fac <- fac - 1
-
-    labs_x <- unlist(lapply(breaks.x, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
-    if( sum(breaks.x.t >= min(b_data$.x) & breaks.x.t <= max(b_data$.x)) > 10 ){
-      breaks.x <- breaks.x.t
-      labs_x <- custom_tick_labels(breaks.x)
-    }
-    
-    fac <- 5
-    mfac <- max(b_data$.y)
-    while( mfac < 5 * 10^fac && fac > -3){ 
-      fac <- fac - 1
-    }
-    fac <- fac - 1
-
-    
-    labs_y <- unlist(lapply(breaks.y, function(x) nearest_factor10(x, label = TRUE, factor=fac)))
-    if( sum(breaks.y.t >= min(b_data$.y) & breaks.y.t <= max(b_data$.y)) > 10 ){
-      breaks.y <- breaks.y.t
-      labs_y <- custom_tick_labels(breaks.y)
-    }
-    
-    imgfile <-  paste0(tempfile(), '.png')
-    t_data <- tibble( data[,1], data[, 2])
-    
+    labs_x <- get_breaks(breaks.x.t, label = TRUE)
+    labs_y <- get_breaks(breaks.y.t, label = TRUE)
+      
     p <- ggplot() +
-      scale_x_continuous(limits = c( min(b_data$.x), max(b_data$.x) ),
-                         breaks = breaks.x,
-                         expand=c(0,0),
-                         # trans = custom_scale,
-                         labels = labs_x,
-                         sec.axis = dup_axis(labels=c())) +
-      scale_y_continuous(limits = c( min(b_data$.y), max(b_data$.y) ),
-                         breaks = breaks.y,
-                         expand=c(0,0),
-                         # trans = custom_scale,
-                         labels = labs_y,
-                         sec.axis = dup_axis(labels = c())) +
-      # geom_scattermore(
-      #   data=t_data,
-      #   mapping=aes(x=.x, y=.y),
-      #   pointsize=1.5,
-      #   col=colors,
-      #   pixels=c(600,600)) +
+      scale_x_continuous(limits = xlim, 
+                              breaks = breaks.x.t,
+                              expand=c(0.03,0.03),
+                              # trans = custom_scale,
+                              labels = labs_x,
+                              sec.axis = dup_axis(labels=c())) +
+        scale_y_continuous(limits = ylim,
+                           breaks = breaks.y.t,
+                           expand=c(0.03,0.03),
+                           # trans = custom_scale,
+                           labels = labs_y,
+                           sec.axis = dup_axis(labels = c())) +
       geom_scattermost(
-        data.matrix(t_data),
-        pointsize=1.5,
+        data.matrix(data),
+        pointsize=point_size,
         col=colors,
         pixels=c(600,600)) +
       labs(x=lab_names[1], y=lab_names[2])  +
       theme(panel.background = element_rect(fill = 'white', colour = 'white'),
-            axis.line.x=element_line(color="#07070F" ),
-            axis.line.y=element_line(color="#07070F" ),
+            axis.line=element_line(color="#07070F" ),
             text = element_text(size=8),
             axis.ticks.x.top = element_blank(),
-            axis.title.x.top = element_blank(),
-            axis.ticks.y.right = element_blank(),
-            axis.title.y.right = element_blank())
+            axis.ticks.y.right = element_blank())
 
-    p<- set_biexp_ticks(p, breaks.x)
+
+    p<- set_biexp_ticks(p, breaks.x.t)
 
   
     pb <- ggplot_build(p)
@@ -329,6 +312,153 @@ create_plot_2d <- function( data, trans  ){
 
     breaks_y <- append(append( range_y[1], pb$layout$panel_params[[1]]$y.sec$break_info$major_source_user ), range_y[2])
     breaks_y.rel <-append(append(0, pb$layout$panel_params[[1]]$y.sec$break_info$major), 1)
+  }
+  
+
+  if( !is.null(gate_coords)){
+    
+    if( gate_type == 'poly'){
+      cx <- mean(gate_coords$x)
+      cy <- mean(gate_coords$y)
+      
+      # change plot lims for cases where parts of the gate were
+      # outside the plot area
+      min_plot_x <- min( min(gate_coords$x), xlim[1] )
+      max_plot_x <- max( max(gate_coords$x), xlim[2] )
+      min_plot_y <- min( min(gate_coords$y), ylim[1] )
+      max_plot_y <- max( max(gate_coords$y), ylim[2] )
+      
+      p <- p +
+        scale_y_continuous(limits = c(min_plot_y, max_plot_y) ,
+                           breaks = breaks.y,
+                           expand=c(0.03,0.03),
+                           labels = labs_y) +
+        scale_x_continuous(limits = c(min_plot_x, max_plot_x) ,
+                           breaks = breaks.x,
+                           expand=c(0.03,0.03),
+                           labels = labs_x) +
+        geom_path(aes(x=gate_coords$x, y=gate_coords$y), data=tibble(gate_coords$x),
+                  size=1.5, color="black") +
+        geom_path(aes(x=gate_coords$x, y=gate_coords$y), data=tibble(gate_coords$x),
+                   size=0.25, color="white") +
+        geom_label(aes(x=cx,
+                       y=cy),
+                   label=gate_info$pct[[1]],
+                   alpha=0.5, fill="#AAAAAA",
+                   size=2, fontface="bold",
+                   label.padding = unit(0.12, "lines"))
+
+      
+    }
+    
+    if( gate_type == 'quadrant'){
+      x_coords <- c()
+      y_coords <- c()
+      
+      yr <- pb$layout$panel_scales_y[[1]]$get_limits()
+      xr <- pb$layout$panel_scales_x[[1]]$get_limits()
+      
+      
+      # To account for plot margins, replace the min/max in gate data by the
+      # plotted minimum and maximum values
+      
+      gate_coords$x[c(4,6)] <- xr[1]+abs(xr[1]*0.005)
+      gate_coords$x[c(5,7)] <- xr[2]-abs(xr[2]*0.005)
+
+      gate_coords$y[c(3,7)] <- yr[1]+abs(yr[1]*0.005)
+      gate_coords$y[c(2,6)] <- yr[2]-abs(yr[2]*0.005)
+      
+      # top left, top right, bottom-left, bottom right
+      xs <- c(  gate_coords$x[4] + (gate_coords$x[2] - gate_coords$x[4])/2,
+                gate_coords$x[2] + (gate_coords$x[5] - gate_coords$x[2])/2,
+                gate_coords$x[4] + (gate_coords$x[2] - gate_coords$x[4])/2,
+                gate_coords$x[2] + (gate_coords$x[5] - gate_coords$x[2])/2
+                )
+      
+      ys <- c( gate_coords$y[4] + (gate_coords$y[6] - gate_coords$y[4])/2,
+               gate_coords$y[4] + (gate_coords$y[6] - gate_coords$y[4])/2,
+               gate_coords$y[3] + (gate_coords$y[4] - gate_coords$y[3])/2,
+               gate_coords$y[3] + (gate_coords$y[4] - gate_coords$y[3])/2
+               
+               )
+      
+    
+      for( i in seq(2, length(gate_coords$x)-2)){
+        x_coords <- append(x_coords, gate_coords$x[1])
+        x_coords <- append(x_coords, gate_coords$x[i])
+        
+        y_coords <- append(y_coords, gate_coords$y[1])
+        y_coords <- append(y_coords, gate_coords$y[i])
+      }
+
+      
+      min_plot_x <- min( min(gate_coords$x), xlim[1] )
+      max_plot_x <- max( max(gate_coords$x), xlim[2] )
+      min_plot_y <- min( min(gate_coords$y), ylim[1] )
+      max_plot_y <- max( max(gate_coords$y), ylim[2] )
+      
+      p <- p +
+        scale_y_continuous(limits = c(min_plot_y, max_plot_y) ,
+                           breaks = breaks.y,
+                           expand=c(0.03,0.03),
+                           labels = labs_y) +
+        scale_x_continuous(limits = c(min_plot_x, max_plot_x) ,
+                           breaks = breaks.x,
+                           expand=c(0.03,0.03),
+                           labels = labs_x) +
+        geom_path(aes(x=x_coords, 
+                      y=y_coords),
+                  size=0.5, color="black") +   
+        geom_path(aes(x=x_coords, 
+                      y=y_coords),
+                  size=0.25, color="white") + 
+        geom_label(aes(x=xs, y=ys), data=tibble(c(1,1,1,1)),
+                   label=gate_info$pct[[1]],
+                   alpha=0.5, fill="#AAAAAA",
+                   size=2, fontface="bold",
+                   label.padding = unit(0.12, "lines"))
+
+    }
+    
+    if( gate_type == 'ellipsoid'){
+      radius_a <- sqrt( (gate_coords$y[3]-gate_coords$y[1])**2 + (gate_coords$x[3]-gate_coords$x[1])**2)
+      radius_b <- sqrt( (gate_coords$y[2]-gate_coords$y[1])**2 + (gate_coords$x[2]-gate_coords$x[1])**2)
+      
+      dy <- gate_coords$y[3] - gate_coords$y[1]
+      dx <- gate_coords$x[3] - gate_coords$x[1]
+      
+      rot <- atan2(dy, dx)
+      
+
+      min_plot_x <- min( min(gate_coords$x), xlim[1] )
+      max_plot_x <- max( max(gate_coords$x), xlim[2] )
+      min_plot_y <- min( min(gate_coords$y), ylim[1] )
+      max_plot_y <- max( max(gate_coords$y), ylim[2] )
+      
+      p <- p +
+        scale_y_continuous(limits = c(min_plot_y, max_plot_y) ,
+                           breaks = breaks.y,
+                           expand=c(0.03,0.03),
+                           labels = labs_y) +
+        scale_x_continuous(limits = c(min_plot_x, max_plot_x) ,
+                           breaks = breaks.x,
+                           expand=c(0.03,0.03),
+                           labels = labs_x) +
+        geom_ellipse(aes(x0 = gate_coords$x[1], 
+                         y0 = gate_coords$y[1], a = radius_a, b = radius_b, angle = rot),
+                     color="black", size=0.5) + 
+        geom_ellipse(aes(x0 = gate_coords$x[1], 
+                         y0 = gate_coords$y[1], a = radius_a, b = radius_b, angle = rot),
+                     color="white", size=0.25) + 
+        geom_label(aes(x=gate_coords$x[1],
+                       y=gate_coords$y[1]),
+                   label=gate_info$pct[[1]],
+                   alpha=0.5, fill="#AAAAAA",
+                   size=2, fontface="bold",
+                   label.padding = unit(0.14, "lines"))
+    }
+    
+    
   }
 
   ggsave(imgfile, units='px', width=600, height=600, device='png', p )
@@ -402,45 +532,49 @@ get_axis_plot_lims <- function( imgfile ){
   return(list(plot_lim_x, plot_lim_y))
 }
 
-nearest_factor10 <- function( num, label=TRUE, factor=4){
+get_breaks <- function( num_list, label=TRUE){
+  stp <- mean(diff(num_list))
   
-  neg_fac <- 1
-  if(num<0){
-    neg_fac <- -1
-  }
-  num <- abs(num)
-
-  if( num < 10^factor ){
-    if(label == FALSE){
-      return( neg_fac*(10^factor) )
+  
+  ndigits <- nchar(as.character(as.integer(abs(stp))))
+  
+  digits <- c( 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 )
+  
+  lbls   <- c( '', '', '', 'k', 'k', 'k', 'mi.', 'mi.', 'mi.',
+               'bi.', 'bi.', 'bi.')
+  
+  facs <- c(0, 0, 0, 3, 3, 3, 6, 6, 6, 9, 9, 9)
+  
+  
+  breaks <- c()
+  for( num in num_list ){
+    if( ndigits < 2){
+      num <- as.numeric( format(num, digits=ndigits+1), scientif=FALSE )
     }else{
-      num<-10^factor
-      round_num <- paste0(
-        format( neg_fac * ( num - num %% 10^factor )/1e3, scientific=FALSE),
-        'K')
-      return( round_num )
+      
+      num <- as.numeric( format(num, digits=ndigits), scientif=FALSE )
+      
+    }  
+
+    if(label == TRUE){
+      fac <- facs[which(digits==ndigits)]
+      num <- num / 10^( fac  )
+      if( ndigits < 2){
+        num <- as.numeric( format(num, digits=ndigits-fac+1), scientif=FALSE )
+      }else{
+        num <- as.numeric( format(num, digits=ndigits-fac), scientif=FALSE )  
+      }
+      
+      num <- paste0(
+        as.character(num),
+        lbls[ndigits])
     }
+
+    breaks <- append(breaks,  num )
   }
   
-  if(label == FALSE){
-    return(neg_fac * ( num - num %% 10^factor ) )
-  }
-  
-  # It is potentially good to consider displaying scale of
-  # K, M, 10^-2 and so on...
-  if( factor >= 3){
-    round_num <- paste0(
-      format( neg_fac * ( num - num %% 10^factor )/1e3, scientific=FALSE),
-      'K')  
-  }else{
-    round_num <- paste0(
-      format( neg_fac * ( num - num %% 10^factor ), scientific=FALSE),
-      '')  
-  }
-  
-  
-  
-  return( round_num )
+
+  return( breaks )
 }
 
 
@@ -542,20 +676,6 @@ custom_tick_labels <- function(breaks) {
   
   return(lbls)
 }
-
-theme_fcs <- function() {
-  theme(
-    legend.position = "right",
-    plot.title = element_text(hjust = 0.5),
-    panel.border = element_rect(
-      colour = "black",
-      fill = NA,
-      size = 1),
-    axis.text.x = element_text(margin = margin(t = .3, unit = "cm")),
-    axis.text.y = element_text(margin = margin(r = .3, unit = "cm"))
-  )
-} 
-
 
 
 is_ten <- function(x){

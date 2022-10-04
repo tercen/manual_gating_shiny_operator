@@ -4,6 +4,8 @@ globalThis.plist = new Array();
 var currentButton = new Array();
 var currentGroup = new Array();
 
+// Holds information drawing points, %, and message of linked gates
+var linked_gate_info = { pct: '', x:-1, y:-1, type: ''  };
 
 var isSaveEnabled = false;
 
@@ -141,19 +143,6 @@ function rgbToHex(r, g, b) {
 // -----------------------------------------------------
 // END OF Render gate functions
 // -----------------------------------------------------
-
-
-// Control events to remove the 'Loading' modal
-$(document).on('shiny:sessioninitialized', function(event) {
-  Shiny.setInputValue('pageLoaded', Math.random());
-});
-
-$(document).on('shiny:connected', function(event) {
-  Shiny.setInputValue('connected', Math.random());
-});
-
-
-
 function save_gate(){
   if( isSaveEnabled == false ){
     return
@@ -161,7 +150,7 @@ function save_gate(){
   
   var canvas = document.getElementById('gate_canvas');
   hide_all_btn();
-  Shiny.setInputValue('save', canvas.toDataURL()); // Ask server to save 
+  Shiny.setInputValue('save', 'saved'); // Ask server to save 
 }
 
 
@@ -210,6 +199,7 @@ function select_button(objId){
     }
   }
 }
+
 
 function get_active_button_id( btnGrp ){
   if( currentGroup.length == 0){
@@ -324,7 +314,12 @@ Shiny.addCustomMessageHandler('flag_info', function(flag_info){
   let x = flag_info.x;
   let y = flag_info.y;
   
+
+  render_pct(ctx, pct, x, y);
   
+})
+
+function render_pct(ctx, pct, x, y ){
   ctx.save();
   ctx.font = '20px Arial'
   
@@ -343,7 +338,8 @@ Shiny.addCustomMessageHandler('flag_info', function(flag_info){
   }
   
   ctx.restore();
-})
+  
+}
 
 Shiny.addCustomMessageHandler('setViewOnly', function(ignore){
   hide_all_btn();
@@ -372,8 +368,41 @@ Shiny.addCustomMessageHandler('axis_bounds', function(bounds){
   document.getElementById('circDrawBtnImg').style = 'visibility:visible';
 })
 
+Shiny.addCustomMessageHandler('show_fileChooser', function(unused){
+  document.getElementById('fileChooser').style = 'visibility:visible';
+  
+})
 
+Shiny.addCustomMessageHandler('show_removedData', function(msg){
+  let spanEl = document.getElementById('removedData');
+  spanEl.innerHTML = msg;
+  spanEl.style = 'visibility:visible';
+  
+})
 
+Shiny.addCustomMessageHandler('poly_coords', function(poly_info){
+  let pct = poly_info.pct;
+  let x = poly_info.x;
+  let y = poly_info.y;
+  let px = poly_info.px;
+  let py = poly_info.py;
+  let ptype = poly_info.ptype;
+
+  //var linked_gate_info = { pct: '', x:-1, y:-1, type: ''  };
+  globalThis.plist = new Array();
+  for (let i = 0; i < px.length; i++) {
+      globalThis.plist.push( 
+            {x: px[i], y: py[i]}
+          );
+
+  }
+  linked_gate_info.pct = pct;
+  linked_gate_info.x = x;
+  linked_gate_info.y = y;
+  linked_gate_info.type = ptype;
+})
+
+/*
 Shiny.addCustomMessageHandler('image_loaded', function(msg){
   var channel_image = document.getElementById('channel_image');
   var canvas = document.getElementById('gate_canvas');
@@ -383,6 +412,7 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
   canvas.height = channel_image.naturalHeight;
   
   var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(channel_image,0,0);
   
 
@@ -683,7 +713,392 @@ Shiny.addCustomMessageHandler('image_loaded', function(msg){
   canvas.onmouseup = onUp;
   canvas.onmousemove = onDrag;
   //render(canvas, globalThis.plist);
+  
+  if(globalThis.plist.length > 0){
+
+    if(linked_gate_info.type == 'poly'){
+      render(canvas, globalThis.plist);
+      isPolygonClosed = true; // No new points allowed
+    }
+    
+    if(linked_gate_info.type == 'quadrant'){
+      render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,5) );
+    }
+    
+    if(linked_gate_info.type == 'line'){
+      render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,3) );
+    }
+    
+    if(linked_gate_info.type == 'ellipsoid'){
+      render_ellipsoid(canvas, globalThis.plist );
+    }
+
+    render_pct(ctx, linked_gate_info.pct, linked_gate_info.x, linked_gate_info.y);
+  }
+  
   Shiny.setInputValue('remove_spinner', Math.random());
   
 })
 
+*/
+$(document).on("shiny:value", function(e) {
+  
+  if(e.name == 'image_div'){
+    e.preventDefault();
+    ev = e.value;
+    let img_node = document.createElement("img");
+    img_node.id = ev.id;
+    img_node.width = "100%";
+    img_node.height = ev.height;
+    
+    img_node.onload = function(){
+      var channel_image = document.getElementById('channel_image');
+    
+    
+      if( channel_image != null){
+        var canvas = document.getElementById('gate_canvas');
+        canvas.width = channel_image.naturalWidth;
+        canvas.height = channel_image.naturalHeight;
+        
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(channel_image,0,0);
+        
+        function processEvent(evt) {
+          var rect = canvas.getBoundingClientRect();
+          var offsetTop = rect.top;
+          var offsetLeft = rect.left;
+          
+          if (evt.touches) {
+            return {
+              x: evt.touches[0].clientX - offsetLeft,
+              y: evt.touches[0].clientY - offsetTop
+            }
+          } else {
+            return {
+              x: evt.clientX - offsetLeft,
+              y: evt.clientY - offsetTop
+            }
+          }
+        }
+        
+        
+        function onDown(evt) {
+          evt.preventDefault();
+          var coords = processEvent(evt);
+          
+          is_dragging = false;
+          drag_idx = -1;
+          
+          for (let i = 0; i < globalThis.plist.length; i++) {
+            let dist = Math.sqrt(Math.pow(coords.x - globalThis.plist[i].x,2) + Math.pow(coords.y - globalThis.plist[i].y,2) );
+            let is_closing_poly = currentMode == 'polyDraw' && i == 0;
+            if( dist < 10 && !is_closing_poly){
+              is_dragging = true;
+              drag_idx = i;
+              break;
+            }
+          }
+          
+      
+      
+          if( isPolygonClosed == false && is_dragging ==  false){ // Add new points
+            if(currentMode == 'polyDraw'){
+              if( globalThis.plist != '' && globalThis.plist.length > 1){
+                  let first_pt = globalThis.plist[0];
+                  let dist = Math.sqrt(Math.pow(coords.x - first_pt.x,2) + Math.pow(coords.y - first_pt.y,2) );
+                  
+                  if( dist < 10 ){
+                    coords.x = first_pt.x;
+                    coords.y = first_pt.y;
+                    globalThis.plist.push(coords);
+      
+                    let poly = {
+                      'coords': globalThis.plist,
+                      'type': 'poly'
+                    };
+                    
+                    
+                    Shiny.setInputValue('polygon', poly);
+                    enable_save( true );
+                  }else{
+                    globalThis.plist.push(coords);
+                  }
+                }else{
+                  globalThis.plist.push(coords);
+                } 
+                render(canvas, globalThis.plist);
+              } // END of polygon drawing 
+              
+              // QUADRANT DRAWING
+              if(currentMode == 'quadDraw'){
+                globalThis.plist = new Array();
+                globalThis.plist.push(coords);
+                let mid_y = Math.abs(axis_bounds[2]-axis_bounds[3])/2;
+                let mid_x = Math.abs(axis_bounds[1]-axis_bounds[0])/2;
+                
+      
+                globalThis.plist.push( 
+                  {x: coords.x, y: axis_bounds[2]}
+                );
+                  
+                globalThis.plist.push( 
+                  {x: coords.x, y: axis_bounds[3]}
+                );
+                  
+                globalThis.plist.push( 
+                  {x: axis_bounds[0], y: coords.y}
+                );
+                  
+                globalThis.plist.push( 
+                  {x: axis_bounds[1], y: coords.y}
+                );
+      
+                let poly = {
+                  'coords': globalThis.plist,
+                  'type': 'quadrant'
+                };
+                    
+                    
+                Shiny.setInputValue('polygon', poly);
+                enable_save( true );
+                
+                render_quadrant(canvas, coords, globalThis.plist.slice(1,5) );
+              } // END of quadrant drawing
+              
+              if(currentMode == 'lineDraw'){
+                globalThis.plist = new Array();
+                globalThis.plist.push(coords);
+      
+      
+                globalThis.plist.push( 
+                  {x: coords.x, y: axis_bounds[2]}
+                );
+                  
+                globalThis.plist.push( 
+                  {x: coords.x, y: axis_bounds[3]}
+                );
+                  
+                let poly = {
+                  'coords': globalThis.plist,
+                  'type': 'line'
+                };
+                    
+                    
+                Shiny.setInputValue('polygon', poly);
+                enable_save( true );
+                
+                render_quadrant(canvas, coords, globalThis.plist.slice(1,3) );
+              } // END if lineDraw
+              
+              if(currentMode == 'circDraw'){
+                isPolygonClosed = true;
+                globalThis.plist = new Array();
+                globalThis.plist.push(coords);
+                
+                let canvas = document.getElementById('gate_canvas');
+                
+      
+                globalThis.plist.push( 
+                  {x: coords.x, y: coords.y - (canvas.height*0.05)}
+                );
+                  
+                globalThis.plist.push( 
+                  {x: coords.x + (canvas.width*0.075), y: coords.y}
+                );
+                  
+                let poly = {
+                  'coords': globalThis.plist,
+                  'type': 'ellipsoid'
+                };
+                    
+                Shiny.setInputValue('polygon', poly);
+                enable_save( true );
+      
+                render_ellipsoid(canvas, globalThis.plist );
+              } // END if circDraw
+            
+          }
+          
+        }
+        
+        function onDrag(evt){
+          if( is_dragging == true ){
+            var coords = processEvent(evt);
+            if(currentMode == 'polyDraw'){
+              if( drag_idx == globalThis.plist.length-1){
+                // Move first and last
+                globalThis.plist[0] = coords;
+              }
+              globalThis.plist[drag_idx] = coords;
+              render(canvas, globalThis.plist);
+            }
+            if(currentMode == 'circDraw'){
+              if(drag_idx == 0){
+                // Center point, drag the full polygon
+                let old_center = globalThis.plist[0];
+                let dx = coords.x - old_center.x;
+                let dy = coords.y - old_center.y;
+                
+                globalThis.plist[drag_idx] = coords;
+                globalThis.plist[1].x += dx;
+                globalThis.plist[1].y += dy;
+                globalThis.plist[2].x += dx;
+                globalThis.plist[2].y += dy;
+              }else {
+                let dy =  globalThis.plist[drag_idx].y - globalThis.plist[0].y;
+                let dx =  globalThis.plist[drag_idx].x - globalThis.plist[0].x;
+                let old_rotation = Math.atan2(dy, dx); // range (-PI, PI]
+                
+                dy =  coords.y - globalThis.plist[0].y;
+                dx =  coords.x - globalThis.plist[0].x;
+                let new_rotation = Math.atan2(dy, dx); // range (-PI, PI]
+                
+                let rotation = (old_rotation - new_rotation)/1;
+                let cos = Math.cos(rotation);
+                let sin = Math.sin(rotation);
+                
+                let cx = globalThis.plist[0].x;   
+                let cy = globalThis.plist[0].y;   
+                if(drag_idx == 1){
+                  let el = globalThis.plist[2];
+              
+                  globalThis.plist[2].x = (cos * (el.x - cx)) + (sin * (el.y - cy)) + cx;
+                  globalThis.plist[2].y = (cos * (el.y - cy)) - (sin * (el.x - cx)) + cy;
+                }else{
+                  let el = globalThis.plist[1];
+                  globalThis.plist[1].x = (cos * (el.x - cx)) + (sin * (el.y - cy)) + cx;
+                  globalThis.plist[1].y = (cos * (el.y - cy)) - (sin * (el.x - cx)) + cy;
+                }
+                
+                globalThis.plist[drag_idx] = coords;
+      
+              }
+              
+              render_ellipsoid(canvas, globalThis.plist );
+            }
+            
+            
+            if(currentMode == 'quadDraw'){
+              // 1,2 y-axis only
+              if( drag_idx == 1 || drag_idx == 2){
+                globalThis.plist[drag_idx].x = coords.x;  
+              }else if( drag_idx == 3 || drag_idx == 4){
+                globalThis.plist[drag_idx].y = coords.y;  
+              } else{
+                globalThis.plist[drag_idx] = coords;  
+              }
+              
+              
+              render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,5) );
+            }
+            
+            if(currentMode == 'lineDraw'){
+      
+              if( drag_idx == 0 ){
+                globalThis.plist = new Array();
+                globalThis.plist.push(coords);
+      
+                globalThis.plist.push( 
+                  {x: coords.x, y: axis_bounds[2]}
+                );
+                  
+                globalThis.plist.push( 
+                  {x: coords.x, y: axis_bounds[3]}
+                );
+              }
+              
+              render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,3) );
+            }
+      
+          }
+          
+        }
+        
+        function onUp(evt) {
+          is_dragging = false;
+          if(currentMode == 'polyDraw' && isPolygonClosed == true){
+            let poly = {
+              'coords': globalThis.plist,
+              'type': 'poly'
+            };
+            
+            
+            Shiny.setInputValue('polygon', poly);
+          }
+          
+          if(currentMode == 'circDraw'){
+            let poly = {
+              'coords': globalThis.plist,
+              'type': 'ellipsoid'
+            };
+            Shiny.setInputValue('polygon', poly);
+          }
+          
+          if(currentMode == 'quadDraw'){
+            let poly = {
+              'coords': globalThis.plist,
+              'type': 'quadrant'
+            };
+            Shiny.setInputValue('polygon', poly);
+          }
+          
+          if(currentMode == 'lineDraw'){
+              let poly = {
+                'coords': globalThis.plist,
+                'type': 'line'
+              };
+      
+              Shiny.setInputValue('polygon', poly);
+          }
+          
+      
+        }
+        
+        
+        canvas.ontouchstart = onDown;
+        canvas.onmousedown = onDown;
+        canvas.onmouseup = onUp;
+        canvas.onmousemove = onDrag;
+        //render(canvas, globalThis.plist);
+        
+        if(globalThis.plist.length > 0){
+      
+          if(linked_gate_info.type == 'poly'){
+            render(canvas, globalThis.plist);
+            isPolygonClosed = true; // No new points allowed
+          }
+          
+          if(linked_gate_info.type == 'quadrant'){
+            render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,5) );
+          }
+          
+          if(linked_gate_info.type == 'line'){
+            render_quadrant(canvas, globalThis.plist[0], globalThis.plist.slice(1,3) );
+          }
+          
+          if(linked_gate_info.type == 'ellipsoid'){
+            render_ellipsoid(canvas, globalThis.plist );
+          }
+      
+          render_pct(ctx, linked_gate_info.pct, linked_gate_info.x, linked_gate_info.y);
+        }
+        
+
+        Shiny.setInputValue('remove_spinner', Math.random());
+      }
+    };
+    
+    img_node.src = ev.src;
+
+    let idiv = document.getElementById("image_div");
+    while (idiv.firstChild) {
+        idiv.firstChild.remove()
+    }
+
+    idiv.appendChild(img_node);
+
+  }
+
+  
+})

@@ -206,7 +206,7 @@ create_plot_2d <- function( data, trans,
 
     p <- ggplot() +
       geom_scattermost(
-        as.matrix( data ),
+        as.matrix( data[ , c(1,2)] ),
         pointsize=point_size,
         col=colors,
         pixels=c(600,600)) +
@@ -290,7 +290,7 @@ create_plot_2d <- function( data, trans,
                            labels = labs_y,
                            sec.axis = dup_axis(labels = c())) +
       geom_scattermost(
-        data.matrix(data),
+        data.matrix(data[,c(1,2)]),
         pointsize=point_size,
         col=colors,
         pixels=c(600,600)) +

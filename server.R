@@ -51,7 +51,7 @@ sourceCpp("polygon_test.cpp")
 
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/accfd52a-e2dd-47d8-9ede-15beaa23e034
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-# options("tercen.stepId"= "accfd52a-e2dd-47d8-9ede-15beaa23e034")
+# options("tercen.stepId"= "c6c28d80-d0f0-4dc1-9cac-2ea974f5e20c")
 
 #http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/c9f9c606-38bc-4284-940b-dd06dfe63ce5
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
@@ -424,8 +424,6 @@ server <- shinyServer(function(input, output, session) {
       dplyr::mutate(filename = df$data$filename)
     
     
-      
-    
     if(op_file$mode == "single"){
       flagDf <- flags %>%
         mutate(.i = unlist(unname(df$data["rowId"]))) 
@@ -439,8 +437,6 @@ server <- shinyServer(function(input, output, session) {
         ylim <- c(min(df$data[,2]), max(df$data[,2]))
         
         res <- create_plot_2d(data, plot_transform, xlim, ylim, gates$poly_df[[1]], gates$types[[1]], gate_info)
-        
-        # res <- create_plot_2d(data, plot_transform, gates$poly_df[[1]], gates$types[[1]], gate_info)
       }
       
       if( plot_type  == '1d' ){
@@ -562,12 +558,12 @@ get_data <- function( session ){
   data_mode <- NULL
   
   # Check the number of files present
-  cnames <- unlist( ctx$cnames)
+  cnames <- unname(unlist( ctx$cnames))
   
   is_fname <- unlist(lapply( cnames, function(x){ 
     sp <- str_split_fixed(x, "[.]", Inf)
     if( length(sp) > 1 ){
-      sp <- sp[-1]
+      sp <- sp[length(sp)]
     }
     sp == "filename" 
   }))

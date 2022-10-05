@@ -81,6 +81,7 @@ server <- shinyServer(function(input, output, session) {
   
   # op_file <- reactiveValues()
   op_file <- list(mode=NULL)
+  init_file_chooser <- reactiveVal(1)
   
   image <- list( loaded=NULL, 
                  range_x=NULL, 
@@ -98,22 +99,19 @@ server <- shinyServer(function(input, output, session) {
   
   # Dynamic content does not work well with ignoreInit, so this is a counter used
   # to prevent multiple triggers of renderImage
-  init_mgr <- list( fileChooser=0 )
+  init_mgr <- reactiveValues( fileChooser=0, fileChooserInit=FALSE )
   
   output$fileChooser<-renderUI({
-    # shinyCatch(stop("fileChooser"), blocking_level = "error" )
-
-    # req(op_file$mode)
-    # 
-    # if( !is.null(op_file$mode) && op_file$mode == "many"){
-    #   filenames <- unname(unlist(unique( df$data['filename'])))
-    #   
-    #   session$sendCustomMessage("show_fileChooser", 1)
-    #   selectInput("file", "Filename", filenames,   selectize = FALSE, selected = NULL)  
-    #   
-    # }
+    # print("fileChooser")
     
 
+    if( init_mgr$fileChooserInit == TRUE && !is.null(op_file$mode) && op_file$mode == "many"){
+      filenames <- unname(unlist(unique( df$data['filename'])))
+
+      session$sendCustomMessage("show_fileChooser", 1)
+      selectInput("file", "Filename", filenames,   selectize = FALSE, selected = NULL)
+
+    }
   })
   
   observe({
@@ -124,10 +122,11 @@ server <- shinyServer(function(input, output, session) {
     plot_type <<- tmp[[2]]
     plot_transform <<- tmp[[3]]
     op_file$mode <<- tmp[[4]]  
+    init_mgr$fileChooserInit <- TRUE
   })
   
   output$image_div <- renderImage({
-    print("Render image")
+    
     query = parseQueryString(session$clientData$url_search)
     op_mode <- query[["mode"]]
 
@@ -233,7 +232,6 @@ server <- shinyServer(function(input, output, session) {
   }, deleteFile = TRUE)
   
   observeEvent( input$file, {
-    shinyCatch(stop("file"), blocking_level = "error" )
     if( init_mgr$fileChooser >= 1){
       show_modal_spinner(spin="fading-circle", text = "Loading")
       df$file <- input$file
@@ -247,7 +245,7 @@ server <- shinyServer(function(input, output, session) {
   # to calculate the % of data points inside of it
   # ===========================================================
   observeEvent( input$polygon, {
-    shinyCatch(stop("poly"), blocking_level = "error" )
+    
     axis.limits <- c(image$plot_lim_x[1], 
                      image$plot_lim_y[2],
                      image$plot_lim_x[2],

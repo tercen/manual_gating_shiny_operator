@@ -64,11 +64,15 @@ sourceCpp("polygon_test.cpp")
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
 # options("tercen.stepId"= "c9f9c606-38bc-4284-940b-dd06dfe63ce5")
 
-# Multifile CD4
+# Multifile 2d
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/856c9b56-81a0-4c4b-b1e2-d361cb297b9b
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
 # options("tercen.stepId"= "22d3e75b-251c-48b0-a7d2-e89bf1fe4d7f")
 
+# Multifile 1d
+# http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/7f4215e4-1e5f-4fa7-8885-74f393d01362/wa
+# options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
+# options("tercen.stepId"= "7f4215e4-1e5f-4fa7-8885-74f393d01362")
 
 server <- shinyServer(function(input, output, session) {
   
@@ -263,6 +267,7 @@ server <- shinyServer(function(input, output, session) {
     
     # Gate limits extend to the edge of the plot figure, so we add those coordinates
     # to the gate
+    
     if( coords.type %in% c('quadrant', 'line')){
       coords.x <- append( coords.x, image$plot_lim_x )
       coords.y <- append( coords.y, image$plot_lim_y )
@@ -286,11 +291,18 @@ server <- shinyServer(function(input, output, session) {
     
     # Change from 0 - 1 to min(data) - max(data) coordiantes
     coords.poly.x <- (((coords.x - 0) * ( max(df$data[,1]) - min(df$data[,1]))) / (1 - 0)) + min(df$data[,1])
-    coords.poly.y <- (((1-coords.y - 0) * (max(df$data[,2]) - min(df$data[,2]))) / (1 - 0)) + min(df$data[,2])
+    
+    if( plot_type == '2d'){
+      coords.poly.y <- (((1-coords.y - 0) * (max(df$data[,2]) - min(df$data[,2]))) / (1 - 0)) + min(df$data[,2])  
+    }else{
+      coords.poly.y <- (((1-coords.y - 0) * (1 - 0)) / (1 - 0)) + 0  
+    }
+    
 
     poly_df <- data.frame("x"=coords.poly.x,
                           "y"=coords.poly.y )
 
+    
     if( op_file$mode == 'many' ){
       if( is.null(df$files)){
         df$files <- sort(unique(unlist(df$data$filename)))

@@ -180,7 +180,9 @@ server <- shinyServer(function(input, output, session) {
       }
       
       if( plot_type  == '1d' ){
-        res <- create_plot_1d(data, plot_transform)
+        xlim <- c(min(df$data[,1]), max(df$data[,1]))
+        
+        res <- create_plot_1d(data, plot_transform, xlim=xlim)
         imgfile <<- res[[1]]
         image$range_x <<- res[[2]]
         image$range_y <<- res[[3]]

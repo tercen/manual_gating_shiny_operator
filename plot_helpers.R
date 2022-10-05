@@ -1,11 +1,14 @@
 # Finish up reviewing and cleaning up the code
-create_plot_1d <- function( data, trans , gate_coords=NULL , gate_type=NULL, gate_info=NULL ){
+create_plot_1d <- function( data, trans , gate_coords=NULL , gate_type=NULL, gate_info=NULL, xlim=NULL ){
   # Create 1d density plot
   xt <- data[,1]
   imgfile <-  paste0(tempfile(), '.png')
   lab_names <- names(data)
   
-  xlim <- c(min(xt), max(xt))
+  if(is.null(xlim)){
+    xlim <- c(min(xt), max(xt))  
+  }
+  
   
   xs <- (xlim[2] - xlim[1])/5
   xticks <- seq( xlim[1], xlim[2], by=xs )

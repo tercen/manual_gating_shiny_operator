@@ -406,7 +406,7 @@ Shiny.addCustomMessageHandler('poly_coords', function(poly_info){
 $(document).on("shiny:value", function(e) {
   
   if(e.name == 'image_div'){
-    alert('imagediv')
+    
     e.preventDefault();
     ev = e.value;
     let img_node = document.createElement("img");
@@ -415,7 +415,7 @@ $(document).on("shiny:value", function(e) {
     img_node.height = ev.height;
     
     img_node.onload = function(){
-      alert('onload')
+      
       var channel_image = document.getElementById('channel_image');
     
     

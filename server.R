@@ -67,7 +67,7 @@ sourceCpp("polygon_test.cpp")
 # Multifile CD4
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/856c9b56-81a0-4c4b-b1e2-d361cb297b9b
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
-# options("tercen.stepId"= "856c9b56-81a0-4c4b-b1e2-d361cb297b9b")
+# options("tercen.stepId"= "22d3e75b-251c-48b0-a7d2-e89bf1fe4d7f")
 
 
 server <- shinyServer(function(input, output, session) {
@@ -79,7 +79,8 @@ server <- shinyServer(function(input, output, session) {
   plot_transform <- 'linear'
   plot_type    <- '2d'
   
-  op_file <- reactiveValues()
+  # op_file <- reactiveValues()
+  op_file <- list(mode=NULL)
   
   image <- list( loaded=NULL, 
                  range_x=NULL, 
@@ -116,17 +117,17 @@ server <- shinyServer(function(input, output, session) {
   })
   
   observe({
-    shinyCatch(stop("getData"), blocking_level = "error" )
-    
+    # shinyCatch(stop("getData"), blocking_level = "error" )
+    # browser()
     tmp <-get_data(session)
     df$data <- tmp[[1]]
     plot_type <<- tmp[[2]]
     plot_transform <<- tmp[[3]]
-    op_file$mode <- tmp[[4]]  
+    op_file$mode <<- tmp[[4]]  
   })
   
   output$image_div <- renderImage({
-    shinyCatch(stop("imageDiv"), blocking_level = "error" )
+    print("Render image")
     query = parseQueryString(session$clientData$url_search)
     op_mode <- query[["mode"]]
 
@@ -141,7 +142,7 @@ server <- shinyServer(function(input, output, session) {
       
       lab_names <- names(df$data)
       
-      if( isolate(op_file$mode) == "many"){
+      if( op_file$mode == "many"){
         if(is.null(df$file)){
           # selectInput is not yet initialized, take the first name
           data<- df$data %>% 
@@ -410,7 +411,7 @@ server <- shinyServer(function(input, output, session) {
   
 
   observeEvent( input$remove_spinner, {
-    shinyCatch(stop("removeSpinner"), blocking_level = "error" )
+    
     remove_modal_spinner()
   })
   

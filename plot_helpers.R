@@ -346,7 +346,7 @@ create_plot_2d <- function( data, trans,
                            expand=c(0.03,0.03),
                            labels = labs_x) +
         geom_path(aes(x=gate_coords$x, y=gate_coords$y), data=tibble(gate_coords$x),
-                  size=1.5, color="black") +
+                  size=0.5, color="black") +
         geom_path(aes(x=gate_coords$x, y=gate_coords$y), data=tibble(gate_coords$x),
                    size=0.25, color="white") +
         geom_label(aes(x=cx,

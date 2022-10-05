@@ -4,14 +4,14 @@ library(shinyjs)
 library(shinycssloaders)
 
 library(shinybusy)
-library(spsComps)
+# library(spsComps)
 
 shinyUI(
   
   fixedPage(
   # fillPage(
     shinyjs::useShinyjs(),
-    spsDepend('shinyCatch'),
+    # spsDepend('shinyCatch'),
     
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),

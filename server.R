@@ -22,10 +22,10 @@ library(Rcpp)
 
 # =====================
 # DEBUG libraries
-library(spsComps)
-library(spsUtil)
-spsOption("traceback", TRUE)
-options(show.error.locations = TRUE)
+# library(spsComps)
+# library(spsUtil)
+# spsOption("traceback", TRUE)
+# options(show.error.locations = TRUE)
 # library(reactlog)
 # reactlog_enable()
 #reactlog_disable()
@@ -415,7 +415,6 @@ server <- shinyServer(function(input, output, session) {
   
 
   observeEvent( input$save, {
-    shinyCatch(stop("save"), blocking_level = "error" )
     ctx <- getCtx(session)
     show_modal_spinner(spin="fading-circle", text = "Saving")
     

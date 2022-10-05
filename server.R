@@ -100,24 +100,18 @@ server <- shinyServer(function(input, output, session) {
   init_mgr <- list( fileChooser=0 )
   
   output$fileChooser<-renderUI({
-    shinyCatch(stop("fileChooser"), blocking_level = "error" )
-    tryCatch({
-      req(op_file$mode)
-      
-      if( !is.null(op_file$mode) && op_file$mode == "many"){
-        filenames <- unname(unlist(unique( df$data['filename'])))
-        
-        session$sendCustomMessage("show_fileChooser", 1)
-        selectInput("file", "Filename", filenames,   selectize = FALSE, selected = NULL)  
-        
-      }
-    },error=function(cond){
-      showModal(modalDialog(
-        title = "ERROR",
-        cond
-      ))
-    })
-    })
+    # shinyCatch(stop("fileChooser"), blocking_level = "error" )
+
+    # req(op_file$mode)
+    # 
+    # if( !is.null(op_file$mode) && op_file$mode == "many"){
+    #   filenames <- unname(unlist(unique( df$data['filename'])))
+    #   
+    #   session$sendCustomMessage("show_fileChooser", 1)
+    #   selectInput("file", "Filename", filenames,   selectize = FALSE, selected = NULL)  
+    #   
+    # }
+    
 
   })
   

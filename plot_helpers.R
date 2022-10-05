@@ -36,6 +36,7 @@ create_plot_1d <- function( data, trans , gate_coords=NULL , gate_type=NULL, gat
       geom_density(fill = '#eff5fffd') +
       scale_x_continuous(breaks = xticks, 
                          labels = xtick_labels,
+                         limits=xlim,
                          expand=c(0,0)) +
       scale_y_continuous(expand=c(0,0),
                          limits = c(0,1)) +

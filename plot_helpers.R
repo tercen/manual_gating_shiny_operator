@@ -34,7 +34,8 @@ create_plot_1d <- function( data, trans , gate_coords=NULL , gate_type=NULL, gat
       scale_x_continuous(breaks = xticks, 
                          labels = xtick_labels,
                          expand=c(0,0)) +
-      scale_y_continuous(expand=c(0,0)) +
+      scale_y_continuous(expand=c(0,0),
+                         limits = c(0,1)) +
       theme(panel.background = element_rect(fill = 'white', colour = 'white'),
              axis.line.x=element_line(color="#07070F" ),
              axis.line.y=element_line(color="#07070F" ),

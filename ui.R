@@ -4,16 +4,15 @@ library(shinyjs)
 library(shinycssloaders)
 
 library(shinybusy)
-
 library(spsComps)
 
 shinyUI(
   
   fixedPage(
-    spsDepend("shinyCatch"), # optional
   # fillPage(
     shinyjs::useShinyjs(),
-
+    spsDepend('shinyCatch'),
+    
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
       tags$script(type = "text/javascript", src = "gating.js"),
@@ -21,6 +20,7 @@ shinyUI(
     
 
     fixedRow(
+      
       column( 12, 
               HTML('<button type="button" id="polyDrawBtn" class="btn-tool"  data-group="draw"  title="Polygon drawing mode">
                               <img class="btn-icon" src="poly_gate.png" onClick=select_button("polyDrawBtn"); 

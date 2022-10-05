@@ -100,16 +100,10 @@ server <- shinyServer(function(input, output, session) {
   init_mgr <- list( fileChooser=0 )
   
   output$fileChooser<-renderUI({
-    req(op_file$mode)
-    shinyCatch({
-      message(paste0("File Chooser has failed -> ", 
-                     op_file$mode
-                     ))
-      
-      
-    }, blocking_level = "error",
-               trace_back = TRUE, position="top-full-width", shiny=TRUE) 
+    shinyCatch(stop("fileChooser"), blocking_level = "error" )
     
+    req(op_file$mode)
+
     if( !is.null(op_file$mode) && op_file$mode == "many"){
       filenames <- unname(unlist(unique( df$data['filename'])))
       
@@ -120,6 +114,8 @@ server <- shinyServer(function(input, output, session) {
   })
   
   observe({
+    shinyCatch(stop("getData"), blocking_level = "error" )
+    
     tmp <-get_data(session)
     df$data <- tmp[[1]]
     plot_type <<- tmp[[2]]
@@ -128,13 +124,7 @@ server <- shinyServer(function(input, output, session) {
   })
   
   output$image_div <- renderImage({
-    shinyCatch({
-      message(paste0("renderImage has failed "
-      ))
-      
-      
-    }, blocking_level = "error",
-    trace_back = TRUE, position="top-full-width", shiny=TRUE) 
+    shinyCatch(stop("imageDiv"), blocking_level = "error" )
     query = parseQueryString(session$clientData$url_search)
     op_mode <- query[["mode"]]
 
@@ -240,19 +230,21 @@ server <- shinyServer(function(input, output, session) {
   }, deleteFile = TRUE)
   
   observeEvent( input$file, {
+    shinyCatch(stop("file"), blocking_level = "error" )
     if( init_mgr$fileChooser >= 1){
       show_modal_spinner(spin="fading-circle", text = "Loading")
       df$file <- input$file
     }else{
       init_mgr$fileChooser <<- init_mgr$fileChooser + 1
     }
-  })
+  }, ignoreInit = FALSE)
   
   # ===========================================================
   # EVENT triggered when a polygon drawing is finished
   # to calculate the % of data points inside of it
   # ===========================================================
   observeEvent( input$polygon, {
+    shinyCatch(stop("poly"), blocking_level = "error" )
     axis.limits <- c(image$plot_lim_x[1], 
                      image$plot_lim_y[2],
                      image$plot_lim_x[2],
@@ -416,11 +408,13 @@ server <- shinyServer(function(input, output, session) {
   
 
   observeEvent( input$remove_spinner, {
+    shinyCatch(stop("removeSpinner"), blocking_level = "error" )
     remove_modal_spinner()
   })
   
 
   observeEvent( input$save, {
+    shinyCatch(stop("save"), blocking_level = "error" )
     ctx <- getCtx(session)
     show_modal_spinner(spin="fading-circle", text = "Saving")
     

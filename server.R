@@ -763,8 +763,17 @@ calculate_poly_flags <- function( poly_df, point_cloud,
                              rx2, ry2)
     
 
-    poly.px.x <-append( poly.px.x, list(((coords.x[1])*range.plot.x)+image$plot_lim_x[1]*0.97))
-    poly.px.y <-append( poly.px.y, list(((coords.y[1])*range.plot.y)+image$plot_lim_y[1]))
+    offy <- sqrt(ry2) / (max( point_cloud$y )-min( point_cloud$y ))
+
+    
+    if( coords.y[1] > 0.5 ){
+      offy <- offy * -1 - 0.1
+    }else{
+      offy <- offy * 1 + 0.05
+    }
+    
+    poly.px.x <-append( poly.px.x, list(((coords.x[1])*range.plot.x)+image$plot_lim_x[1]))
+    poly.px.y <-append( poly.px.y, list(((coords.y[1]+offy)*range.plot.y)+image$plot_lim_y[1]))
   }
   
   if( coords.type == 'poly'){

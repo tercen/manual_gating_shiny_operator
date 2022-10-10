@@ -443,6 +443,22 @@ create_plot_2d <- function( data, trans,
       min_plot_y <- min( min(gate_coords$y), ylim[1] )
       max_plot_y <- max( max(gate_coords$y), ylim[2] )
       
+      
+      
+      if( (gate_coords$x[1] + radius_a) > max_plot_x ){
+        maxplot_x <- (gate_coords$x[1] + radius_a*1.05)
+      }
+      if( (gate_coords$x[1] - radius_a) < min_plot_x ){
+        minplot_x <- (gate_coords$x[1] - radius_a*1.05)
+      }
+      
+      if( (gate_coords$x[1] + radius_a) > max_plot_x ){
+        maxplot_x <- (gate_coords$x[1] + radius_a*1.05)
+      }
+      if( (gate_coords$x[1] - radius_a) < min_plot_x ){
+        minplot_x <- (gate_coords$x[1] - radius_a*1.05)
+      }
+      
       p <- p +
         scale_y_continuous(limits = c(min_plot_y, max_plot_y) ,
                            breaks = breaks.y,
@@ -464,6 +480,7 @@ create_plot_2d <- function( data, trans,
                    alpha=0.5, fill="#AAAAAA",
                    size=2, fontface="bold",
                    label.padding = unit(0.14, "lines"))
+      
     }
     
     

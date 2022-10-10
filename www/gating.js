@@ -557,6 +557,7 @@ $(document).on("shiny:value", function(e) {
               
               if(currentMode == 'circDraw'){
                 isPolygonClosed = true;
+                
                 globalThis.plist = new Array();
                 globalThis.plist.push(coords);
                 

@@ -35,6 +35,27 @@ library(Rcpp)
 source('plot_helpers.R')
 sourceCpp("polygon_test.cpp")
 
+
+# ISSUE #16
+# http://127.0.0.1:5402/admin/w/7852b12924332da120ed404d8e023258/ds/104ae3c7-1ca4-4ea5-95bf-cc26c61add7b
+# options("tercen.workflowId"= "7852b12924332da120ed404d8e023258")
+# options("tercen.stepId"= "104ae3c7-1ca4-4ea5-95bf-cc26c61add7b")
+
+# Lymphocyte
+# http://127.0.0.1:5402/admin/w/7852b12924332da120ed404d8e023258/ds/0f032540-b6c5-4c6c-96dd-eee95dae527e
+# options("tercen.workflowId"= "7852b12924332da120ed404d8e023258")
+# options("tercen.stepId"= "0f032540-b6c5-4c6c-96dd-eee95dae527e")
+
+# Singlets
+# http://127.0.0.1:5402/admin/w/7852b12924332da120ed404d8e023258/ds/b760f751-ca84-44c1-a51f-ba184b6497a4
+# options("tercen.workflowId"= "7852b12924332da120ed404d8e023258")
+# options("tercen.stepId"= "b760f751-ca84-44c1-a51f-ba184b6497a4")
+
+# Live Gate
+# http://127.0.0.1:5402/admin/w/7852b12924332da120ed404d8e023258/ds/c8aeabe8-3fec-46e8-be92-42885c2696cb
+# options("tercen.workflowId"= "7852b12924332da120ed404d8e023258")
+# options("tercen.stepId"= "c8aeabe8-3fec-46e8-be92-42885c2696cb")
+
 # CD4/CD8
 # http://127.0.0.1:5402/admin/w/b68ce8bb9db1120cb526d82c5b32a6d2/ds/e21fa40a-73e7-47c5-b84e-68c00d6e5738
 # options("tercen.workflowId"= "b68ce8bb9db1120cb526d82c5b32a6d2")
@@ -456,7 +477,8 @@ server <- shinyServer(function(input, output, session) {
     
     if(op_file$mode == "single"){
       flagDf <- flags %>%
-        mutate(.i = unlist(unname(df$data["rowId"]))) 
+        mutate(.i = seq(0, nrow(flags)-1)) 
+        # mutate(.i = unlist(unname(df$data["rowId"]))) 
       data<- df$data 
       gate_info <- tibble(pct=gates$pcts[[1]],
                           x=gates$xs[[1]],
@@ -489,7 +511,7 @@ server <- shinyServer(function(input, output, session) {
       }else{
         flagDf[pref] <- gates$flags[[1]][[1]] 
       }
-      
+
     }else{
       for( fi in seq(1,length(df$files))){
         fname <- df$files[fi]
@@ -502,7 +524,8 @@ server <- shinyServer(function(input, output, session) {
         # print(fi)
         flagDf_tmp <- flags %>%
           dplyr::filter( filename == fname)   %>%
-          mutate(".i" = rowId) 
+          mutate(.i = seq(0, nrow(flags)-1)) 
+        # mutate(.i = unlist(unname(df$data["rowId"])))  
 
         
         data <- df$data %>% 

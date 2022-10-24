@@ -409,8 +409,15 @@ window.onload = function() {
   element.style.color = "#AAAAAA";
   element.addEventListener("click", function(e) {
       e.target.value = '';
-      e.target.style.color = "#FFFFFF";
+      e.target.style.color = "#000000";
 
+  }, false);
+  
+  element.addEventListener("focusout", function(e) {
+      if( e.target.value == ''){
+        e.target.style.color = "#AAAAAA";  
+        e.target.value = 'Enter population name...';
+      }
   }, false);
 };
 

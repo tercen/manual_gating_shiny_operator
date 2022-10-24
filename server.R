@@ -454,6 +454,13 @@ server <- shinyServer(function(input, output, session) {
     show_modal_spinner(spin="fading-circle", text = "Saving")
     
     pref <- input$gateFlagPref
+    
+    if( is.null(pref) ||
+        pref == "Enter population name..." || 
+        nchar(pref) == 0){
+      pref <- "Unnamed"
+    }
+    
     flag_vec <- as.numeric(df$data$rowId)*0 # initialize flag
     flags <- tibble("{pref}":=flag_vec) 
     

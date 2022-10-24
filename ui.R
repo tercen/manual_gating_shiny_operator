@@ -63,9 +63,9 @@ shinyUI(
               
               
               fixedRow(
-               column(2, textInput("gateFlagPref", "Population", value="Pop"), 
-                              class="input-row",
-                              style="top: 200%"),
+               column(2, textInput("gateFlagPref", "Population", value="Enter population name..."), 
+                              class="input-row", 
+                              style="top: 200%;" ),
               ),
               
               fixedRow(

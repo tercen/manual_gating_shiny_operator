@@ -8,6 +8,7 @@ var currentGroup = new Array();
 var linked_gate_info = { pct: '', x:-1, y:-1, type: ''  };
 
 var isSaveEnabled = false;
+var popHasName = false;
 
 var currentMode  = 'none';
 var isPolygonClosed = false;
@@ -268,7 +269,7 @@ function hide_all_btn(){
 
 
 function enable_save( enb ){
-  if( enb === true){
+  if( enb === true ){
     document.getElementById("saveDisabledDiv").style = 'opacity:100%;';  
     isSaveEnabled = true;
   }else{
@@ -401,6 +402,19 @@ Shiny.addCustomMessageHandler('poly_coords', function(poly_info){
   linked_gate_info.y = y;
   linked_gate_info.type = ptype;
 })
+
+
+window.onload = function() {
+  var element = document.getElementById("gateFlagPref");
+  element.style.color = "#AAAAAA";
+  element.addEventListener("click", function(e) {
+      e.target.value = '';
+      e.target.style.color = "#FFFFFF";
+
+  }, false);
+};
+
+
 
 
 $(document).on("shiny:value", function(e) {
